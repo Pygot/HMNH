@@ -1,0 +1,207 @@
+{# src/agent/web/templates/messages.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, field, select %}
+{% block title %}Messages | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}"><link rel="stylesheet" href="{{ asset('messages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Messages</h1>
+    <p class="meta">Talk to people, roles and groups. <a class="textlink" href="/announcements">Announcements{% if unread.announcements %} ({{ unread.announcements }} new){% endif %}</a></p>
+  </div>
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+
+<p class="talk__error note note--error" role="alert" data-trust hidden><span data-trust-text></span> <button class="btn btn--small" type="button" data-trust-accept>I compared it and it matches</button></p>
+
+<form class="unlock" data-unlock hidden novalidate>
+  <p class="hint">Enter your messaging passphrase to read and write private conversations in this browser.</p>
+  <input class="input" type="password" name="passphrase" autocomplete="current-password" placeholder="Your messaging passphrase" aria-label="Messaging passphrase">
+  <button class="btn btn--primary" type="submit">{{ icon('shield') }}Unlock</button>
+  <small class="muted" data-unlock-error hidden></small>
+</form>
+
+<div class="talk" data-talk data-members='{{ members|map(attribute="user_id")|list|tojson }}' data-names='{{ names|tojson }}' data-me="{{ me }}" data-idle="{{ settings.unlock_minutes }}" data-keys="{{ 'present' if keys else 'none' }}" data-poll="{{ settings.poll_seconds }}" data-e2ee="{{ '1' if e2ee else '' }}"{% if current %} data-conversation="{{ current.id }}" data-encrypted="{{ '1' if current.encrypted else '' }}" data-version="{{ current.key_version }}" data-feed="/messages/c/{{ current.id }}/feed" data-send="/messages/c/{{ current.id }}/send" data-wrapped="/messages/c/{{ current.id }}/keys" data-peers="/messages/c/{{ current.id }}/peers"{% endif %}>
+  <aside class="talk__list" aria-label="Conversations">
+    <ul class="talk__rows">
+      {% for item in conversations %}
+      <li><a class="talk__row{% if current and current.id == item.id %} is-active{% endif %}" href="/messages?c={{ item.id }}">
+        <span class="talk__name">{{ item.title }}{% if item.encrypted %} <span class="kind">private</span>{% endif %}</span>
+        <small class="muted">{{ {'direct': 'Direct', 'group': 'Group', 'role': 'Role channel'}[item.kind] }}</small>
+        {% if item.unread %}<span class="badge">{{ item.unread }}</span>{% endif %}
+      </a></li>
+      {% else %}
+      <li class="muted talk__none">No conversations yet.</li>
+      {% endfor %}
+    </ul>
+    <form method="post" action="/messages/role">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">{{ icon('users') }}Open my role channel</button></form>
+  </aside>
+
+  <section class="talk__main" aria-label="Conversation">
+    {% if current %}
+    <header class="talk__head">
+      <div>
+        <h2>{{ current.title }}</h2>
+        <p class="muted small">
+          {% if current.encrypted %}Private: encrypted in your browser, the server keeps only scrambled text. <span data-lock-state>Locked</span>
+          {% else %}Encrypted on the server. Administrators of the server can technically read it.{% endif %}
+        </p>
+      </div>
+      {% if current.encrypted %}<button class="btn btn--small" type="button" data-lock>{{ icon('shield') }}Unlock</button>{% endif %}
+    </header>
+    {% if current.encrypted %}
+    <details class="more">
+      <summary><span>Keys and fingerprints</span>{{ icon('chevron') }}</summary>
+      <p class="hint">These are computed in your browser. Compare them with each person in person or by phone. If one differs from what they see on their own screen, do not trust this conversation.</p>
+      <ul class="memory">
+        {% for member in members %}
+        <li><span>{{ member.name }}{% if member.user_id == me %} <span class="kind">you</span>{% endif %}</span><span class="num" data-fp-of="{{ member.user_id }}">not loaded</span></li>
+        {% endfor %}
+      </ul>
+      <form method="post" action="/messages/c/{{ current.id }}/rotate" data-rekey="rotate">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">{{ icon('shield') }}Change the key</button></form>
+      <p class="hint">Change the key after someone leaves or can no longer sign in, or when the conversation says nobody shared the key with you. People who lose access keep what they already read.</p>
+    </details>
+    {% endif %}
+    <ol class="talk__feed" data-feed-list aria-live="polite">
+      {% for message in feed %}
+      <li class="bubble{% if message.mine %} bubble--mine{% endif %}" data-id="{{ message.id }}" data-sender="{{ message.sender_id or '' }}" data-version="{{ message.version }}"{% if message.removed %} data-removed="1"{% endif %}{% if message.encrypted and not message.removed %} data-cipher="{{ message.cipher }}"{% endif %}>
+        <span class="bubble__meta"><strong>{{ message.sender_name }}</strong> <small class="muted">{{ message.when }}</small></span>
+        <span class="bubble__text">{{ 'Locked' if message.encrypted and not message.removed else message.text }}</span>
+        {% if message.mine or moderator %}<button class="ibtn bubble__x" type="button" data-remove="{{ message.id }}" aria-label="Remove this message">{{ icon('close') }}</button>{% endif %}
+      </li>
+      {% else %}
+      <li class="talk__none muted" data-empty>Nothing here yet. Say hello.</li>
+      {% endfor %}
+    </ol>
+    <form class="talk__compose" data-compose novalidate>
+      <textarea name="text" rows="2" maxlength="{{ settings.max_chars }}" placeholder="Write a message" aria-label="Message"></textarea>
+      <button class="ibtn ibtn--solid" type="submit" aria-label="Send">{{ icon('up') }}</button>
+    </form>
+    <p class="talk__error note note--error" role="alert" data-error hidden></p>
+
+    {% if current.kind == 'group' %}
+    <details class="more">
+      <summary><span>People in this group ({{ members|length }})</span>{{ icon('chevron') }}</summary>
+      <ul class="memory">
+        {% for member in members %}
+        <li>
+          <span>{{ member.name }}{% if member.owner %} <span class="kind">owner</span>{% endif %}{% if not member.eligible %} <span class="kind">cannot sign in</span>{% endif %}</span>
+          {% if (current.owner or moderator) and member.user_id != me %}
+          <form method="post" action="/messages/c/{{ current.id }}/leave"{% if current.encrypted %} data-rekey="remove"{% endif %}>{{ csrf(csrf_token) }}<input type="hidden" name="user" value="{{ member.user_id }}"><button class="ibtn" type="submit" aria-label="Remove {{ member.name }}">{{ icon('close') }}</button></form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% if current.owner or moderator %}
+      <form class="stack" method="post" action="/messages/c/{{ current.id }}/members"{% if current.encrypted %} data-rekey="add"{% endif %} novalidate>
+        {{ csrf(csrf_token) }}
+        <div class="seg seg--multi">
+          {% for person in people %}{% if person.id not in members|map(attribute='user_id') %}
+          <label class="seg__item"><input type="checkbox" name="members" value="{{ person.id }}"><span>{{ icon('check') }}{{ person.name }}</span></label>
+          {% endif %}{% endfor %}
+        </div>
+        <div><button class="btn btn--small" type="submit">{{ icon('plus') }}Add the selected people</button></div>
+      </form>
+      <form class="signin__row" method="post" action="/messages/c/{{ current.id }}/rename" novalidate>
+        {{ csrf(csrf_token) }}
+        <input class="input" type="text" name="title" maxlength="60" value="{{ current.title }}" aria-label="Group name">
+        <button class="btn btn--small" type="submit">Rename</button>
+      </form>
+      {% endif %}
+      {% if current.encrypted %}
+      <p class="hint">Adding or removing someone makes a new key. People added later cannot read what was said before. People removed keep what they already read.</p>
+      {% endif %}
+      <div class="toolbar">
+        <form method="post" action="/messages/c/{{ current.id }}/leave">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Leave the group</button></form>
+        {% if current.owner or moderator %}
+        <details class="confirm">
+          <summary class="btn btn--small">Delete the group</summary>
+          <p>The group and all its messages are removed for everyone.</p>
+          <form method="post" action="/messages/c/{{ current.id }}/delete">{{ csrf(csrf_token) }}<button class="btn btn--small btn--primary" type="submit">Yes, delete it</button></form>
+        </details>
+        {% endif %}
+      </div>
+    </details>
+    {% endif %}
+    {% else %}
+    <p class="empty">Choose a conversation, or start one below.</p>
+    {% endif %}
+  </section>
+</div>
+
+<div class="wide talk__start">
+  <section class="section" id="direct">
+    <h2>Message someone</h2>
+    <form class="stack" method="post" action="/messages/direct" data-e2ee-form="direct" novalidate>
+      {{ csrf(csrf_token) }}
+      {% if people %}
+      <div class="field"><span class="field__label">Person</span>
+        <div class="seg" role="radiogroup" aria-label="Person">
+          {% for person in people %}
+          <label class="seg__item"><input type="radio" name="other" value="{{ person.id }}" data-keys="{{ '1' if person.has_keys else '' }}"><span>{{ person.name }} <small class="muted">{{ person.role }}</small></span></label>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <p class="hint">Nobody else can be messaged yet. Add people under Administration, Accounts.</p>
+      {% endif %}
+      {% if e2ee and people %}
+      <label class="switch">
+        <input type="checkbox" name="encrypted" value="yes" data-private>
+        <span class="switch__box" aria-hidden="true"></span>
+        <span class="switch__text"><strong>Private (end to end)</strong><small>Encrypted in your browsers; the server keeps only scrambled text. Needs your messaging passphrase and keys on both sides.</small></span>
+      </label>
+      {% endif %}
+      {% if people %}<div><button class="btn btn--primary" type="submit">{{ icon('arrow') }}Open the conversation</button></div>{% endif %}
+    </form>
+  </section>
+
+  {% if can_group %}
+  <section class="section" id="group">
+    <h2>Create a group</h2>
+    <form class="stack" method="post" action="/messages/groups" data-e2ee-form="group" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      {{ field('title', 'Group name', '', 'Hiring team', 60) }}
+      <span class="field__label">Members</span>
+      <div class="seg seg--multi">
+        {% for person in people %}
+        <label class="seg__item"><input type="checkbox" name="members" value="{{ person.id }}" data-keys="{{ '1' if person.has_keys else '' }}"><span>{{ icon('check') }}{{ person.name }}</span></label>
+        {% endfor %}
+      </div>
+      {% if e2ee %}
+      <label class="switch">
+        <input type="checkbox" name="encrypted" value="yes" data-private>
+        <span class="switch__box" aria-hidden="true"></span>
+        <span class="switch__text"><strong>Private (end to end)</strong><small>Everyone needs keys first. Whoever is added later cannot read what was said before.</small></span>
+      </label>
+      {% endif %}
+      <div><button class="btn btn--primary" type="submit">{{ icon('plus') }}Create the group</button></div>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if e2ee %}
+  <section class="section" id="keys" data-keys-panel>
+    <h2>Private messages</h2>
+    {% if keys %}
+    <p>Your keys are set up. Fingerprint: <span class="num" data-my-fingerprint>{{ keys.fingerprint }}</span></p>
+    <p class="hint">Each private conversation also lists everyone's fingerprint, computed in your browser. Compare them in person or by phone.</p>
+    <details class="confirm">
+      <summary class="btn btn--small">Reset my keys</summary>
+      <p>Private conversations you are part of become unreadable for you until someone changes the key. You need your account password.</p>
+    </details>
+    {% else %}
+    <p>Private conversations are encrypted in your browser. The server stores only scrambled text, which protects you from a stolen backup or a curious administrator, not from a server that is fully taken over. Choose a messaging passphrase; it never leaves this browser, and nobody can recover it for you.</p>
+    {% endif %}
+    <form class="stack" data-setup-keys data-iterations="{{ settings.kdf_iterations }}" data-replace="{{ '1' if keys else '' }}" novalidate>
+      <label class="field"><span class="field__label">Messaging passphrase</span><input class="input" type="password" name="passphrase" autocomplete="new-password" minlength="10"></label>
+      <label class="field"><span class="field__label">Repeat it</span><input class="input" type="password" name="again" autocomplete="new-password"></label>
+      {% if keys %}<label class="field"><span class="field__label">Your account password</span><input class="input" type="password" name="account_password" autocomplete="current-password"></label>{% endif %}
+      <div><button class="btn" type="submit">{{ icon('shield') }}{{ 'Make new keys' if keys else 'Set up private messages' }}</button></div>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('e2ee.js') }}" nonce="{{ nonce }}" defer></script><script src="{{ asset('messages.js') }}" nonce="{{ nonce }}" defer></script>{% endblock %}

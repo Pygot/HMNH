@@ -1,0 +1,33 @@
+/* src/agent/web/static/messages.css */
+.talk { display: grid; grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr); gap: var(--gap); min-height: 26rem; margin-bottom: var(--gap); }
+.talk__list { display: grid; align-content: start; gap: 10px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: var(--r3); background: var(--panel); }
+.talk__rows { display: grid; gap: 2px; list-style: none; }
+.talk__row { position: relative; display: grid; gap: 1px; padding: 8px 40px 8px 10px; border-radius: var(--r2); text-decoration: none; transition: background 0.15s; }
+.talk__row:hover, .talk__row.is-active { background: var(--soft); }
+.talk__name { font-weight: 600; overflow-wrap: anywhere; }
+.talk__none { padding: 8px 10px; }
+.badge { position: absolute; right: 10px; top: 50%; min-width: 1.5rem; padding: 1px 7px; transform: translateY(-50%); border-radius: 99px; background: var(--ink); color: var(--on-ink); font-size: 0.76rem; font-weight: 700; text-align: center; }
+.talk__main { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--r3); background: var(--panel); }
+.talk__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.talk__feed { display: flex; flex: 1; flex-direction: column; gap: 8px; min-height: 12rem; max-height: 28rem; overflow-y: auto; list-style: none; scrollbar-width: thin; }
+.bubble { position: relative; display: grid; gap: 2px; max-width: min(34rem, 88%); padding: 8px 36px 8px 12px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--soft); animation: drop-in 0.2s var(--ease); }
+.bubble--mine { align-self: flex-end; border-color: var(--ink); background: var(--panel); }
+.bubble__meta { font-size: 0.84rem; }
+.bubble__text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bubble__x { position: absolute; right: 2px; top: 2px; opacity: 0; }
+.bubble:hover .bubble__x, .bubble__x:focus-visible { opacity: 1; }
+.talk__compose { display: flex; align-items: flex-end; gap: 8px; }
+.talk__compose textarea { flex: 1; resize: none; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--paper); color: var(--ink); font: inherit; }
+.talk__error { margin: 0; }
+.unlock { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: var(--gap); padding: 12px var(--pad); border: 1px solid var(--line); border-radius: var(--r3); background: var(--panel); }
+.unlock .input { flex: 1 1 14rem; min-width: 0; }
+.unlock .hint { flex: 1 1 100%; margin: 0; }
+.talk__start { margin-top: var(--gap); }
+.notice { gap: 8px; }
+.notice--new { border-color: var(--ink); }
+.notice__head { display: grid; gap: 2px; }
+.notice__body { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 860px) {
+  .talk { grid-template-columns: minmax(0, 1fr); }
+  .bubble { max-width: 96%; }
+}

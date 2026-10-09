@@ -1,0 +1,48 @@
+{# src/agent/web/templates/compose.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box %}
+{% block title %}Send an email | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Send an email</h1>
+    <p class="meta"><a class="textlink textlink--back" href="/emails/log">Sent mail</a></p>
+  </div>
+</header>
+{{ errors_box(errors) }}
+<div class="narrow">
+  {% if not ready %}
+  <div class="note" role="status">{{ icon('warn') }}<div>Email is not connected yet. An administrator can do that under Connections.</div></div>
+  {% endif %}
+  <form class="section stack" method="post" action="/emails/send" autocomplete="off" novalidate>
+    {{ csrf(csrf_token) }}
+    <input type="hidden" name="job_id" value="{{ values.get('job_id', '') }}">
+    <input type="hidden" name="template" value="{{ values.get('template', '') }}">
+    <input type="hidden" name="candidate_id" value="{{ values.get('candidate_id', '') }}">
+    <p class="hint">From {{ sender or 'the configured sender' }}. Each message is sent on its own and recorded in the sent mail log.</p>
+    <label class="field">
+      <span class="field__label">To</span>
+      <input class="input" type="text" name="to" maxlength="254" value="{{ values.get('to', '') }}" placeholder="name@example.com">
+    </label>
+    <label class="field">
+      <span class="field__label">Subject</span>
+      <input class="input" type="text" name="subject" maxlength="250" value="{{ values.get('subject', '') }}">
+    </label>
+    <label class="field">
+      <span class="field__label">Text</span>
+      <textarea class="input input--area" name="body" rows="12" maxlength="10050">{{ values.get('body', '') }}</textarea>
+    </label>
+    <p class="hint">This line is added at the end of the message so people can opt out:</p>
+    <pre class="draft__body footer">{{ footer }}</pre>
+    {% if ready %}
+    <label class="switch">
+      <input type="checkbox" name="confirm" value="yes">
+      <span class="switch__box" aria-hidden="true"></span>
+      <span class="switch__text"><strong>I reviewed this message and want to send it</strong><small>Addresses that asked not to be contacted are skipped automatically.</small></span>
+    </label>
+    {% endif %}
+    <div><button class="btn btn--primary" type="submit"{% if not ready %} disabled{% endif %}>{{ icon('mail') }}Send now</button></div>
+  </form>
+</div>
+{% endblock %}

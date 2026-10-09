@@ -1,0 +1,150 @@
+{# src/agent/web/templates/finance.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, field, select %}
+{% from "_charts.html" import grouped, rows %}
+{% block title %}Finance | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Revenue and finance</h1>
+    <p class="meta">Amounts in {{ currency }}. {{ range[0] }} to {{ range[1] }}.</p>
+  </div>
+  {% if can_export %}<div class="pagehead__tools"><a class="textlink" href="/finance/export.csv">{{ icon('download') }}Download CSV</a></div>{% endif %}
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="wide">
+  <section class="section">
+    <h2>Last {{ months|length }} months</h2>
+    <dl class="facts">
+      <div><dt>Revenue</dt><dd class="num">{{ money(totals.revenue) }}</dd></div>
+      <div><dt>Expenses</dt><dd class="num">{{ money(totals.expense) }}</dd></div>
+      <div><dt>Net</dt><dd class="num">{{ money(net) }}</dd></div>
+    </dl>
+    {{ grouped(chart) }}
+    <div class="grid2">
+      {% for label, plot in breakdowns %}
+      <div>
+        <h3 class="group-title">{{ label }} by category</h3>
+        {% if plot %}{{ rows(plot) }}{% else %}<p class="muted">Nothing recorded in this period.</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section" id="history">
+    <h2>History</h2>
+    <form class="toolbar" method="get" action="/finance" novalidate>
+      <div class="field">{{ select('kind', kind_options, filters.kind) }}</div>
+      <div class="field">{{ select('category', category_options, filters.category) }}</div>
+      <div class="field">{{ select('month', month_options, filters.month) }}</div>
+      <button class="btn btn--small" type="submit">Filter</button>
+    </form>
+    <div class="tablewrap">
+      <table class="table">
+        <thead><tr><th scope="col">Date</th><th scope="col">Kind</th><th scope="col">Category</th><th scope="col">Note</th><th scope="col">Amount</th><th scope="col"><span class="sr">Action</span></th></tr></thead>
+        <tbody>
+          {% for entry in found.items %}
+          <tr>
+            <td class="num">{{ entry.day }}</td>
+            <td><span class="kind">{{ entry.kind }}</span></td>
+            <td>{{ entry.category or 'None' }}</td>
+            <td>{{ entry.note }}</td>
+            <td class="num">{{ money(entry.amount) }}</td>
+            <td>
+              {% if 'finance.edit' in can %}
+              <details class="more">
+                <summary><span>Edit</span>{{ icon('chevron') }}</summary>
+                <form class="stack" method="post" action="/finance/entries/{{ entry.id }}" autocomplete="off" novalidate>
+                  {{ csrf(csrf_token) }}
+                  <div class="grid2">
+                    {{ field('day', 'Date', entry.day, '2026-03-01', 10) }}
+                    {{ field('amount', 'Amount', plain(entry.amount), '1250.00', 24) }}
+                  </div>
+                  <div class="grid2">
+                    <div class="field"><span class="field__label">Kind</span>{{ select('kind', entry_kinds, entry.kind) }}</div>
+                    <div class="field"><span class="field__label">Category</span>{{ select('category', entry_categories, entry.category_id or '') }}</div>
+                  </div>
+                  {{ field('note', 'Note', entry.note, '', 200) }}
+                  <div class="toolbar"><button class="btn btn--small btn--primary" type="submit">Save</button></div>
+                </form>
+                <form method="post" action="/finance/entries/{{ entry.id }}/delete">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Remove</button></form>
+              </details>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="muted">No entries match.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if pages > 1 %}
+    <nav class="pager" aria-label="Pages">
+      {% if page_number > 1 %}<a class="btn btn--small" href="/finance?kind={{ filters.kind }}&amp;category={{ filters.category }}&amp;month={{ filters.month }}&amp;page={{ page_number - 1 }}">Newer</a>{% endif %}
+      <span class="muted">Page {{ page_number }} of {{ pages }}</span>
+      {% if page_number < pages %}<a class="btn btn--small" href="/finance?kind={{ filters.kind }}&amp;category={{ filters.category }}&amp;month={{ filters.month }}&amp;page={{ page_number + 1 }}">Older{{ icon('arrow') }}</a>{% endif %}
+    </nav>
+    {% endif %}
+  </section>
+
+  {% if 'finance.edit' in can %}
+  <section class="section" id="add">
+    <h2>Add an entry</h2>
+    <form class="stack" method="post" action="/finance/entries" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      <div class="grid3">
+        {{ field('day', 'Date', values.get('day', today), '2026-03-01', 10) }}
+        <div class="field"><span class="field__label">Kind</span>{{ select('kind', entry_kinds, values.get('kind', 'revenue')) }}</div>
+        {{ field('amount', 'Amount in ' ~ currency, values.get('amount', ''), '1250.00', 24) }}
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="field__label">Category (optional)</span>{{ select('category', entry_categories, values.get('category', '')) }}</div>
+        {{ field('note', 'Note (optional)', values.get('note', ''), 'Invoice 2026-014', 200) }}
+      </div>
+      <div><button class="btn btn--primary" type="submit">{{ icon('plus') }}Add</button></div>
+    </form>
+  </section>
+
+  <section class="section" id="categories">
+    <h2>Categories</h2>
+    <p class="hint">Optional. Group entries your own way, for example Subscriptions or Salaries.</p>
+    <ul class="memory">
+      {% for item in categories %}
+      <li>
+        <form class="signin__row" method="post" action="/finance/categories/{{ item.id }}" novalidate>
+          {{ csrf(csrf_token) }}
+          <input class="input" type="text" name="name" maxlength="40" value="{{ item.name }}" aria-label="Name of {{ item.name }}">
+          <span class="kind">{{ item.kind }}</span>
+          <small class="muted">{{ item.entries|plural('entry') if item.entries != 1 else '1 entry' }}</small>
+          <button class="btn btn--small" type="submit">Rename</button>
+        </form>
+        <form method="post" action="/finance/categories/{{ item.id }}/delete">{{ csrf(csrf_token) }}<button class="ibtn" type="submit" aria-label="Remove {{ item.name }}">{{ icon('close') }}</button></form>
+      </li>
+      {% else %}
+      <li class="muted">No categories yet.</li>
+      {% endfor %}
+    </ul>
+    <form class="stack" method="post" action="/finance/categories" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      <div class="grid2">
+        {{ field('name', 'New category', '', 'Subscriptions', 40) }}
+        <div class="field"><span class="field__label">Kind</span>{{ select('kind', entry_kinds, 'expense') }}</div>
+      </div>
+      <div><button class="btn btn--small" type="submit">{{ icon('plus') }}Add category</button></div>
+    </form>
+  </section>
+
+  <section class="section" id="currency">
+    <h2>Currency</h2>
+    <form class="signin__row" method="post" action="/finance/currency" novalidate>
+      {{ csrf(csrf_token) }}
+      <input class="input" type="text" name="currency" maxlength="3" value="{{ currency }}" aria-label="Currency code">
+      <button class="btn btn--small" type="submit">Change</button>
+    </form>
+    <p class="hint">Only the label changes. Amounts are not converted.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

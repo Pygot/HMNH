@@ -1,0 +1,55 @@
+{# src/agent/web/templates/twofa.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, secret, code %}
+{% block title %}Two step sign in | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Two step sign in</h1>
+    <p class="meta">{% if enrolling %}Your administrator requires an authenticator before you continue.{% else %}<a class="textlink textlink--back" href="/account#security">Back to your account</a>{% endif %}</p>
+  </div>
+  {% if enrolling %}<div class="pagehead__tools"><form method="post" action="/logout">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">{{ icon('logout') }}Sign out</button></form></div>{% endif %}
+</header>
+{{ errors_box(errors) }}
+<div class="narrow">
+  {% if codes %}
+  <section class="section">
+    <h2>Save your recovery codes</h2>
+    <p>Each code works once if you lose your phone. They are shown only now.</p>
+    <ul class="codes">{% for item in codes %}<li class="num">{{ item }}</li>{% endfor %}</ul>
+    {{ code(codes|join('\n')) }}
+    <p><a class="btn btn--primary" href="/">Continue{{ icon('arrow') }}</a></p>
+  </section>
+  {% elif user.totp_enabled %}
+  <section class="section">
+    <h2>An authenticator is on</h2>
+    <p>{{ recovery_left }} recovery {{ 'code is' if recovery_left == 1 else 'codes are' }} left.</p>
+    <form class="stack" method="post" action="/account/2fa/recovery" novalidate>
+      {{ csrf(csrf_token) }}
+      {% if user.has_password %}{{ secret('current', 'Your password', 'current-password') }}{% endif %}
+      <div><button class="btn" type="submit">Make new recovery codes</button></div>
+    </form>
+    {% if not required %}
+    <form class="stack" method="post" action="/account/2fa/disable" novalidate>
+      {{ csrf(csrf_token) }}
+      {% if user.has_password %}{{ secret('current', 'Your password', 'current-password') }}{% endif %}
+      <div><button class="btn" type="submit">Turn the authenticator off</button></div>
+    </form>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="section">
+    <h2>Scan the code</h2>
+    <p>Open an authenticator app and scan this code, or type the key by hand. Then enter the six digit code the app shows.</p>
+    <div class="qrbox">{{ qr|safe }}</div>
+    <p class="num secretkey">{{ totp_key }}</p>
+    <form class="signin__row" method="post" action="/account/2fa/enable" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      <input class="input input--code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="Code" aria-label="Code from the app" autofocus>
+      <button class="btn btn--primary" type="submit">Turn it on</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,224 @@
+{# src/agent/web/templates/job.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, tag, links, scale_svg, mix_svg, rating_block, claim_list, scepticism_block, live, company_block, requirements_block, drafts_block %}
+{% set done = job.state == states.DONE %}
+{% set kind_label = 'Skill search' if job.kind == 'skill' else 'Person research' %}
+{% block title %}{{ job.title }} | HMNH{% endblock %}
+{% block head %}{% if running %}<noscript><meta http-equiv="refresh" content="4"></noscript>{% endif %}{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    {% if thread %}<a class="textlink textlink--back" href="/c/{{ thread.id }}">{{ icon('arrow') }}Back to the chat</a>{% endif %}
+    <h1>{{ job.title }}</h1>
+    <p class="meta">{{ kind_label }}{% if done %}, {{ report.goal.value|replace('_', ' ')|capitalize }}{% endif %}</p>
+  </div>
+  {% if done %}
+  <div class="pagehead__tools">
+    {% if voice_enabled %}<button type="button" class="textlink" data-speak="/jobs/{{ job.id }}/speech">{{ icon('speaker') }}Listen</button>{% endif %}
+    {% if 'candidates.edit' in can and policy.candidates_enabled %}
+    <form method="post" action="/jobs/{{ job.id }}/candidate">{{ csrf(csrf_token) }}<button class="textlink" type="submit">{{ icon('user') }}Add to candidates</button></form>
+    {% endif %}
+    <a class="textlink" href="/jobs/{{ job.id }}/download/md">{{ icon('download') }}Markdown</a>
+    <a class="textlink" href="/jobs/{{ job.id }}/download/json">{{ icon('download') }}JSON</a>
+    <details class="confirm">
+      <summary class="textlink">{{ icon('trash') }}Delete</summary>
+      <form method="post" action="/jobs/{{ job.id }}/delete">
+        {{ csrf(csrf_token) }}
+        <p>Remove this report and its exported files?</p>
+        <button class="btn btn--small btn--primary" type="submit">Delete the report</button>
+      </form>
+    </details>
+  </div>
+  {% endif %}
+</header>
+
+{% if job.state == states.RUNNING %}
+<div class="fill">{{ live(job, prefs.live_view.value, true) }}</div>
+
+{% elif job.state == states.FAILED %}
+<div class="note note--error" role="alert">{{ icon('warn') }}<div><strong>The search stopped</strong><p>{{ job.error }}</p></div></div>
+<div class="fill">{{ live(job, prefs.live_view.value, false) }}</div>
+
+{% elif job.state == states.NEEDS_INPUT %}
+<div class="note" role="status">{{ icon('warn') }}<div><strong>This search needs your pick</strong><p>{% if thread %}The question is waiting in the chat. <a class="textlink" href="/c/{{ thread.id }}">Go to the chat{{ icon('arrow') }}</a>{% else %}The chat it came from no longer exists, so it cannot continue.{% endif %}</p></div></div>
+<div class="fill">{{ live(job, prefs.live_view.value, false) }}</div>
+
+{% else %}
+<div class="tabs" data-tabs>
+  <div class="tabs__list" role="tablist" aria-label="Report sections">
+    <button type="button" class="tab" role="tab" data-tab="overview">Overview</button>
+    {% if report.mode == 'person' %}
+    <button type="button" class="tab" role="tab" data-tab="findings">Findings</button>
+    <button type="button" class="tab" role="tab" data-tab="rating">Rating</button>
+    {% else %}
+    <button type="button" class="tab" role="tab" data-tab="ranking">Ranking</button>
+    {% endif %}
+    <button type="button" class="tab" role="tab" data-tab="drafts">Emails</button>
+    <button type="button" class="tab" role="tab" data-tab="activity">Activity</button>
+    <button type="button" class="tab" role="tab" data-tab="sources">Sources</button>
+  </div>
+  <div class="tabs__panels">
+    <section class="tabpanel" role="tabpanel" data-panel="overview" aria-label="Overview">
+      {% if report.mode == 'person' %}
+      {% set rating = report.rating %}
+      {% set capped = rating.raw_overall != rating.overall %}
+      {% if seen %}
+      <div class="note" role="status">{{ icon('user') }}<div>
+        <strong>Seen before</strong>
+        <p>
+          {% if 'candidates.view' in can %}<a class="textlink" href="/candidates/{{ seen.candidate.id }}">{{ seen.candidate.name }}</a>{% else %}{{ seen.candidate.name }}{% endif %}
+          is already a candidate{% if seen.ratings %}: researched {{ seen.ratings|length|plural('time') }} before, last rating {{ '%.1f'|format(seen.ratings[0][1]) }} / 5{% endif %}.
+          {% for hire in seen.hires %}
+          Hired as {{ hire.role_title }}{% if hire.started %} from {{ hire.started }}{% endif %}{% if hire.ended %} to {{ hire.ended }}{% endif %}, {{ hire.outcome }}{% if hire.rating %}, rated {{ hire.rating }} / 5{% endif %}.
+          {% endfor %}
+        </p>
+      </div></div>
+      {% endif %}
+      <div class="verdict">
+        <div>
+          <p class="label">Overall rating</p>
+          <p class="verdict__value"><span class="num">{{ '%.1f'|format(rating.overall) }}</span><small>of 5</small></p>
+          {{ scale_svg(overview.scale, rating.overall) }}
+          {% if capped %}<p class="verdict__note">Capped from {{ '%.1f'|format(rating.raw_overall) }} by the scepticism check. The hollow square marks the uncapped rating.</p>{% endif %}
+        </div>
+        <dl class="verdict__facts">
+          <div><dt>Rated against</dt><dd>{{ rating.target }}</dd></div>
+          <div><dt>Scepticism</dt><dd>{% if rating.scepticism.flags %}{{ rating.scepticism.level.value|capitalize }}, {{ rating.scepticism.flags|length|plural("warning") }}{% else %}No warning signs ({{ rating.scepticism.mode.value }} mode){% endif %}</dd></div>
+          {% if report.requirements %}
+          <div><dt>Requirements</dt><dd>{{ (report.requirements.coverage * 100)|round|int }}% covered{% if report.requirements.must_missing %}, no evidence for {{ report.requirements.must_missing|join(', ') }}{% endif %}</dd></div>
+          {% endif %}
+          <div><dt>Evidence</dt><dd>{{ report.findings|length|plural("finding") }} from {{ report.sources|length|plural("source") }}</dd></div>
+          {% if overview.mix %}
+          <div class="verdict__mix"><dt>Agreement</dt><dd>{{ mix_svg(overview) }}<span class="muted small">{% for part in overview.mix %}{{ part.count }} {{ part.tag|replace('-', ' ') }}{{ ', ' if not loop.last }}{% endfor %}</span></dd></div>
+          {% endif %}
+        </dl>
+      </div>
+      {% if rating.scepticism.flags %}{{ scepticism_block(rating, 'scepticism') }}{% endif %}
+      {% if report.requirements %}{{ requirements_block(report.requirements) }}{% endif %}
+      {% if report.company %}{{ company_block(report.company) }}{% endif %}
+      {% else %}
+      {% set best = report.candidates[0] if report.candidates else none %}
+      <div class="verdict verdict--plain">
+        <div>
+          <p class="label">Best match</p>
+          <p class="verdict__value">{% if best %}<span>{{ best.name }}</span>{% else %}<span>No candidate</span>{% endif %}</p>
+        </div>
+        <dl class="verdict__facts">
+          <div><dt>Best rating</dt><dd class="num">{% if best %}{{ '%.1f'|format(best.rating.overall) }} / 5{% else %}none{% endif %}</dd></div>
+          <div><dt>Candidates assessed</dt><dd class="num">{{ report.candidates|length }}</dd></div>
+          <div><dt>With scepticism warnings</dt><dd class="num">{{ overview.cautioned }}</dd></div>
+          <div><dt>Sources read</dt><dd class="num">{{ report.sources|length }}</dd></div>
+        </dl>
+      </div>
+      {% if report.company %}{{ company_block(report.company) }}{% endif %}
+      {% if 'routines.manage' in can and policy.routines_enabled %}
+      <section class="block" id="keep-looking">
+        <header class="block__head"><h2>Keep looking</h2></header>
+        <p class="hint">If nobody here is perfect yet, a routine repeats this search and tells you when someone is.</p>
+        <form class="signin__row" method="post" action="/jobs/{{ job.id }}/routine" novalidate>
+          {{ csrf(csrf_token) }}
+          <input class="input" type="text" name="min_rating" maxlength="4" value="4.0" aria-label="Perfect means a rating of at least">
+          <button class="btn btn--small" type="submit">{{ icon('clock') }}Keep looking</button>
+        </form>
+      </section>
+      {% endif %}
+      {% endif %}
+    </section>
+
+    {% if report.mode == 'person' %}
+    <section class="tabpanel" role="tabpanel" data-panel="findings" aria-label="Findings">
+      <div id="findings" class="block">
+        {% for category, findings in groups %}
+        <h3 class="group-title">{{ category.value|capitalize }}</h3>
+        <ul>
+          {% for finding in findings %}
+          <li class="finding">
+            <div class="finding__main">
+              <p>{{ finding.statement }}{% if finding.year %} <span class="muted num">({{ finding.year }})</span>{% endif %}</p>
+              <p class="muted small">{{ finding.independent_sources }} independent source{{ '' if finding.independent_sources == 1 else 's' }}</p>
+              {{ links(finding.source_urls) }}
+            </div>
+            {{ tag(finding.tag.value) }}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">No findings could be confirmed.</p>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="tabpanel" role="tabpanel" data-panel="rating" aria-label="Why this rating">
+      <div id="rating" class="block">
+        <header class="block__head"><h2>Why this rating</h2></header>
+        {{ rating_block(report.rating, false) }}
+      </div>
+    </section>
+    {% else %}
+    <section class="tabpanel" role="tabpanel" data-panel="ranking" aria-label="Ranking">
+      <div id="ranking" class="block">
+        {% for candidate in report.candidates %}
+        <article class="candidate{% if candidate.best %} candidate--best{% endif %}">
+          <header class="candidate__head">
+            <span class="candidate__rank num">{{ candidate.rank }}</span>
+            <div><h3>{{ candidate.name }}</h3>{% if candidate.best %}<span class="tag"><i class="mark mark--full" aria-hidden="true"></i>Best match</span>{% endif %}</div>
+          </header>
+          {{ links([candidate.profile_url]) }}
+          {{ rating_block(candidate.rating) }}
+          {{ scepticism_block(candidate.rating) }}
+          {% if candidate.requirements %}{{ requirements_block(candidate.requirements, 'candidate-' ~ candidate.rank ~ '-requirements', true) }}{% endif %}
+          <h4>Claims</h4>
+          {{ claim_list(candidate.claims) }}
+        </article>
+        {% else %}
+        <p class="empty">No candidates could be assessed.</p>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="tabpanel" role="tabpanel" data-panel="drafts" aria-label="Emails">
+      {{ drafts_block(drafts, job.id, send_mail) }}
+    </section>
+
+    <section class="tabpanel tabpanel--fill" role="tabpanel" data-panel="activity" aria-label="Activity">
+      {{ live(job, 'graph', false) }}
+    </section>
+
+    <section class="tabpanel" role="tabpanel" data-panel="sources" aria-label="Sources">
+      <div id="sources" class="block">
+        <header class="block__head"><h2>Sources</h2></header>
+        <ol class="sources">
+          {% for source in report.sources %}
+          <li>
+            <strong>{{ source.title }}</strong>
+            <span class="muted small">{{ source.network.value|network_label }}{% if source.match_score is not none %}, match {{ '%.2f'|format(source.match_score) }}{% endif %}, retrieved {{ source.retrieved_at.strftime('%Y-%m-%d') }}</span>
+            {{ links([source.url]) }}
+          </li>
+          {% else %}
+          <li class="muted">No sources were read.</li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% if report.mode == 'person' %}
+      <div id="summaries" class="block">
+        <header class="block__head"><h2>Source summaries</h2></header>
+        {% for summary in report.source_summaries %}
+        <details class="more">
+          <summary><span>{{ summary.title }} <span class="muted">({{ summary.network.value|network_label }})</span></span>{{ icon('chevron') }}</summary>
+          {{ claim_list(summary.claims) }}
+        </details>
+        {% else %}
+        <p class="empty">No source was summarised.</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div id="limitations" class="block">
+        <header class="block__head"><h2>Limitations</h2></header>
+        <ul class="plain">{% for item in report.limitations %}<li>{{ item }}</li>{% endfor %}</ul>
+        <p class="hint">{{ notice }}</p>
+      </div>
+    </section>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

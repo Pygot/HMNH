@@ -1,0 +1,39 @@
+{# src/agent/web/templates/dashboard.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% from "_charts.html" import grouped, lines, rows %}
+{% block title %}Dashboard | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="meta">Your own numbers in one place. Each part appears only if your role may see it.</p>
+  </div>
+  <nav class="pagehead__tools" aria-label="Period">
+    <a class="textlink" href="/dashboard"{% if not window %} aria-current="true"{% endif %}>Default</a>
+    {% for value, label in choices %}<a class="textlink" href="/dashboard?window={{ value }}"{% if window|string == value %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}
+  </nav>
+</header>
+<div class="wide">
+  {% for report in reports %}
+  <section class="section" id="{{ report.topic.name }}">
+    <h2>{{ report.topic.label }}</h2>
+    <dl class="facts">
+      {% for label, value in report.facts %}<div><dt>{{ label }}</dt><dd class="num">{{ value }}</dd></div>{% endfor %}
+    </dl>
+    <div class="grid2">
+      {% for chart in report.charts %}
+      <div>
+        <h3 class="group-title">{{ chart.title }}</h3>
+        {% if chart.kind == 'grouped' %}{{ grouped(chart.plot) }}{% elif chart.kind == 'lines' %}{{ lines(chart.plot) }}{% else %}{{ rows(chart.plot) }}{% endif %}
+        <a class="textlink" href="/dashboard/{{ report.topic.name }}/{{ loop.index0 }}.svg{% if window %}?window={{ window }}{% endif %}">{{ icon('download') }}Save as SVG</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <p class="empty">Nothing here is open to your role yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{# src/agent/web/templates/chat.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ thread.title if thread else 'New chat' }} | HMNH{% endblock %}
+{% block main_class %}stage--chat{% endblock %}
+{% block content %}
+<section class="chat" data-chat data-thread="{{ thread.id if thread else '' }}" data-view="{{ prefs.live_view.value }}">
+  <header class="chat__bar">
+    <h1 class="chat__title" data-title>{{ thread.title if thread else 'New chat' }}</h1>
+  </header>
+  <div class="chat__scroll" data-scroll>
+    <div class="chat__inner" data-inner>
+      <div class="hello" data-hello{% if initial.messages %} hidden{% endif %}>
+        {{ logo('logo') }}
+        <h2>What are we looking into?</h2>
+        <p>{{ welcome }}</p>
+        <ul class="hello__tries">
+          {% for line in suggestions %}<li><button type="button" class="try" data-try>{{ line }}</button></li>{% endfor %}
+        </ul>
+      </div>
+      <ol class="feed" data-feed aria-live="polite" aria-relevant="additions"></ol>
+    </div>
+  </div>
+  <form class="composer" data-composer autocomplete="off">
+    <button type="button" class="jump" data-jump hidden>{{ icon('chevron') }}<span data-jump-text>Latest</span></button>
+    <div class="composer__box">
+      <p class="composer__file" data-file hidden>{{ icon('file') }}<span data-file-name></span><button type="button" class="ibtn" data-file-clear aria-label="Remove the file">{{ icon('close') }}</button></p>
+      <textarea name="text" rows="1" maxlength="{{ max_chars }}" placeholder="Name someone, or describe who you need" aria-label="Message" data-input></textarea>
+      <div class="composer__row">
+        <input class="sr" type="file" name="cv" accept=".pdf,.docx" tabindex="-1" aria-label="Attach a CV" data-cv>
+        <button type="button" class="ibtn" data-attach aria-label="Attach a CV (PDF or DOCX)">{{ icon('clip') }}</button>
+        {% if voice_enabled %}<button type="button" class="ibtn" data-mic aria-label="Speak your message">{{ icon('mic') }}</button>{% endif %}
+        <span class="composer__hint" data-hint>Enter to send, Shift and Enter for a new line</span>
+        <button class="send" type="submit" aria-label="Send" data-send>{{ icon('up') }}</button>
+      </div>
+    </div>
+    <div class="composer__note">
+      <span>Public professional information only. You review every result.</span>
+      <details>
+        <summary>Notice</summary>
+        <div class="pop">
+          <p>{{ notice }}</p>
+          <p>{{ storage_notice }}</p>
+          {% if voice_enabled %}<p>{{ voice_notice }}</p>{% endif %}
+        </div>
+      </details>
+    </div>
+  </form>
+  <script type="application/json" data-initial>{{ initial|tojson }}</script>
+</section>
+{{ task_icon_set() }}
+{% endblock %}
+{% block scripts %}<script src="{{ asset('chat.js') }}" nonce="{{ nonce }}" defer></script>{% endblock %}

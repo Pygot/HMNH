@@ -1,0 +1,65 @@
+{# src/agent/web/templates/routines.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, field, select, switch %}
+{% block title %}Routines | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Routines</h1>
+    <p class="meta">A routine keeps searching for you until it finds a perfect candidate, then it tells you and stops. {{ runs_today }} of {{ defaults.max_runs_per_day }} runs used in the last 24 hours.</p>
+  </div>
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="wide">
+  <div class="tablewrap">
+    <table class="table">
+      <thead><tr><th scope="col">Routine</th><th scope="col">Status</th><th scope="col">Needs</th><th scope="col">Runs</th><th scope="col">Best so far</th><th scope="col">Next run</th></tr></thead>
+      <tbody>
+        {% for item in routines %}
+        <tr>
+          <td><a class="textlink" href="/routines/{{ item.id }}">{{ item.name }}</a><br><small class="muted">{{ item.last_result or 'Not run yet' }}</small></td>
+          <td><span class="kind">{{ item.status }}</span></td>
+          <td class="num">{{ item.need_count }} at {{ '%.1f'|format(item.min_rating) }}+</td>
+          <td class="num">{{ item.runs }} / {{ item.max_runs }}</td>
+          <td class="num">{% if item.best_rating is not none %}{{ '%.1f'|format(item.best_rating) }}{% else %}-{% endif %}</td>
+          <td>{% if item.next_run %}{{ item.next_run|stamp }}{% else %}-{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted">No routines yet. Run a skill search in the chat and choose "Keep looking" on its report, or set one up below.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if 'routines.manage' in can %}
+  <section class="section" id="new">
+    <h2>New routine</h2>
+    <form class="stack" method="post" action="/routines" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      <div class="grid2">
+        {{ field('skill', 'Skill', values.get('skill', ''), 'Rust', 120) }}
+        {{ field('location', 'City', values.get('location', ''), 'Brno', 120) }}
+      </div>
+      {{ field('name', 'Name (optional)', values.get('name', ''), 'Rust developers in Brno', defaults.max_name_chars) }}
+      <div class="grid3">
+        {{ field('min_rating', 'A perfect candidate rates at least', values.get('min_rating', defaults.default_min_rating), '4.0', 4) }}
+        {{ field('need_count', 'Matches needed', values.get('need_count', '1'), '1', 2) }}
+        {{ field('size', 'Candidates per run', values.get('size', defaults.default_size), '5', 2) }}
+      </div>
+      <div class="grid3">
+        <div class="field"><span class="field__label">Repeat</span>{{ select('interval', intervals, values.get('interval', defaults.default_interval_hours|string)) }}</div>
+        {{ field('max_runs', 'Stop after this many runs', values.get('max_runs', defaults.default_max_runs), '14', 4) }}
+        {{ field('notify', 'Also email (optional)', values.get('notify', ''), 'team@example.com', 600) }}
+      </div>
+      {{ switch('musts', 'Every must-have requirement must be met', true) }}
+      {% if standing %}{{ switch('standing', 'Use my standing requirements (' ~ standing ~ ')', true) }}{% endif %}
+      {{ switch('purpose', 'I am searching for a lawful hiring purpose', false, 'Public professional information only. The same rules as in the chat apply on every run.') }}
+      {% if not mail_ready %}<p class="hint">Email is not connected, so notices appear here only.</p>{% endif %}
+      <div><button class="btn btn--primary" type="submit">{{ icon('clock') }}Start the routine</button></div>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

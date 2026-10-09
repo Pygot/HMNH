@@ -1,0 +1,32 @@
+{# src/agent/web/templates/admin_security.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}Security | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Security and modules</h1>
+    <p class="meta">Choose how people sign in and which parts of the workspace exist. A switched off module disappears for everyone, whatever their role.</p>
+  </div>
+</header>
+{{ admin_nav(section, can) }}
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="narrow">
+  <form class="stack" method="post" action="/admin/security" novalidate>
+    {{ csrf(csrf_token) }}
+    <section class="section">
+      {% for name, label, hint, value in fields %}
+      <label class="switch">
+        <input type="checkbox" name="{{ name }}" value="yes"{% if value %} checked{% endif %}>
+        <span class="switch__box" aria-hidden="true"></span>
+        <span class="switch__text"><strong>{{ label }}</strong><small>{{ hint }}{% if name in ('allow_magic_links', 'email_code_login', 'email_sending_enabled') and not mail_ready %} Needs an email connection.{% endif %}</small></span>
+      </label>
+      {% endfor %}
+    </section>
+    <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Save</button></div>
+  </form>
+</div>
+{% endblock %}

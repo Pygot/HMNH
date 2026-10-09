@@ -1,0 +1,120 @@
+{# src/agent/web/templates/admin_user.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, field, select, notes_box, switch, code %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}{{ target.label }} | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>{{ target.label }}</h1>
+    <p class="meta"><a class="textlink textlink--back" href="/admin/users">All accounts</a></p>
+  </div>
+</header>
+{{ admin_nav(section, can) }}
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="narrow">
+  {% if reveal %}
+  <div class="note note--ok" role="status">{{ icon('check') }}<div><strong>Give this link to {{ target.label }}. It works once and is shown only now.</strong>{{ code(reveal) }}</div></div>
+  {% endif %}
+  <section class="section">
+    <h2>Details</h2>
+    <dl class="facts">
+      <div><dt>Username</dt><dd>{{ target.username }}</dd></div>
+      <div><dt>Role</dt><dd>{{ target.role_name }}</dd></div>
+      <div><dt>Status</dt><dd>{{ target.status }}</dd></div>
+      <div><dt>Password</dt><dd>{{ 'set' if target.has_password else 'not set yet' }}</dd></div>
+      <div><dt>Two step sign in</dt><dd>{{ 'on' if target.totp_enabled else 'off' }}</dd></div>
+      <div><dt>Email</dt><dd>{% if target.email %}{{ target.email }}, {{ 'confirmed' if target.email_verified else 'not confirmed' }}{% else %}none{% endif %}</dd></div>
+      <div><dt>Created</dt><dd>{{ target.created|stamp }}</dd></div>
+      <div><dt>Last sign in</dt><dd>{{ target.last_login|stamp if target.last_login else 'never' }}</dd></div>
+      <div><dt>Signed in now</dt><dd>{{ sessions|length }}</dd></div>
+    </dl>
+  </section>
+
+  {% if 'users.manage' in can and editable %}
+  <section class="section">
+    <h2>Change</h2>
+    <form class="stack" method="post" action="/admin/users/{{ target.id }}" novalidate>
+      {{ csrf(csrf_token) }}
+      {{ field('display_name', 'Name', target.display_name, 'Eva Svobodova', 80) }}
+      {{ field('email', 'Email', target.email or '', 'eva@example.com', 254) }}
+      <div class="grid2">
+        <div class="field"><span class="field__label">Role</span>{{ select('role', role_options, target.role_id) }}</div>
+        <div class="field"><span class="field__label">Status</span>{{ select('status', statuses, target.status) }}</div>
+      </div>
+      {% if itself %}<p class="hint">You cannot change your own role or status.</p>{% endif %}
+      <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Save</button></div>
+    </form>
+  </section>
+
+  <section class="section">
+    <h2>Links</h2>
+    <p class="hint">Each link works once. Creating a new one cancels the older one of the same kind.</p>
+    {% for purpose, label in [('invite', 'New invitation'), ('reset', 'Password reset link'), ('login', 'Sign in link')] %}
+    <form class="signin__row" method="post" action="/admin/users/{{ target.id }}/link">
+      {{ csrf(csrf_token) }}
+      <input type="hidden" name="purpose" value="{{ purpose }}">
+      {% if can_mail and purpose != 'login' %}<input type="hidden" name="send" value="yes">{% endif %}
+      <button class="btn btn--small" type="submit">{{ label }}{% if can_mail and purpose != 'login' %}, also by email{% endif %}</button>
+    </form>
+    {% endfor %}
+  </section>
+
+  <section class="section">
+    <h2>Access</h2>
+    <div class="toolbar">
+      <form method="post" action="/admin/users/{{ target.id }}/sessions">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Sign out everywhere</button></form>
+      {% if target.totp_enabled %}<form method="post" action="/admin/users/{{ target.id }}/2fa">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Remove two step sign in</button></form>{% endif %}
+    </div>
+    {% if not itself %}
+    <details class="confirm">
+      <summary class="btn btn--small">Remove this account</summary>
+      <p>The account and its API keys are deleted. Reports and chats stay.</p>
+      <form method="post" action="/admin/users/{{ target.id }}/delete">{{ csrf(csrf_token) }}<button class="btn btn--small btn--primary" type="submit">Yes, remove it</button></form>
+    </details>
+    {% endif %}
+  </section>
+  {% elif 'users.manage' in can %}
+  <p class="hint">This account has permissions you do not hold, so only someone with more access can change it.</p>
+  {% endif %}
+
+  {% if keys %}
+  <section class="section">
+    <h2>API keys</h2>
+    <div class="tablewrap">
+      <table class="table">
+        <thead><tr><th>Name</th><th>Prefix</th><th>Last used</th><th>Valid until</th><th></th></tr></thead>
+        <tbody>
+          {% for key in keys %}
+          <tr>
+            <td>{{ key.name }}</td>
+            <td class="num">{{ key.prefix }}</td>
+            <td>{{ key.last_used|stamp if key.last_used else 'never' }}</td>
+            <td>{% if key.revoked %}revoked{% elif key.expires %}{{ key.expires|stamp }}{% else %}never{% endif %}</td>
+            <td>{% if not key.revoked %}<form method="post" action="/admin/users/{{ target.id }}/keys/{{ key.id }}/revoke">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Revoke</button></form>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if history %}
+  <section class="section">
+    <h2>Recent activity</h2>
+    <div class="tablewrap">
+      <table class="table">
+        <tbody>
+          {% for entry in history %}
+          <tr><td>{{ entry.ts|stamp }}</td><td>{{ entry.action }}</td><td>{{ entry.outcome }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

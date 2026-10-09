@@ -1,0 +1,107 @@
+{# src/agent/web/templates/landing.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, mark %}
+{% block title %}HMNH{% endblock %}
+{% block body_class %}is-landing{% endblock %}
+{% block main_class %}landing{% endblock %}
+{% block content %}
+<section class="landing__copy">
+  <a class="brand brand--hero" href="/">{{ logo('logo logo--hero') }}<span>HMNH</span></a>
+  <h1 class="reveal d1">Know who you are hiring.</h1>
+  <p class="lede reveal d2">Talk to it like a colleague. Give it a name or a brief and it reads public professional sources, checks each claim against more than one of them, and tells you what holds up.</p>
+  {% if needs_setup and not has_token %}
+  <form class="signin reveal d3" method="get" action="/setup" autocomplete="off">
+    <label class="field">
+      <span class="field__label">Setup code</span>
+      <span class="signin__row">
+        <input class="input" type="text" name="code" autocomplete="off" spellcheck="false" autofocus aria-describedby="code-hint">
+        <button class="btn btn--primary" type="submit">Continue{{ icon('arrow') }}</button>
+      </span>
+    </label>
+    <p class="hint" id="code-hint">This installation has no accounts yet. The setup code is printed in the terminal where you started the server.</p>
+  </form>
+  {% else %}
+  <form class="signin reveal d3" method="post" action="/login" autocomplete="off" novalidate>
+    {{ csrf(csrf_token) }}
+    {{ errors_box(errors) }}
+    {% for note in notes %}<div class="note note--ok" role="status">{{ icon('check') }}<div>{{ note }}</div></div>{% endfor %}
+    {% if password_login %}
+    <label class="field">
+      <span class="field__label">Username</span>
+      <input class="input" type="text" name="username" autocomplete="username" spellcheck="false" autofocus>
+    </label>
+    <label class="field">
+      <span class="field__label">Password</span>
+      <span class="signin__row">
+        <input class="input" type="password" name="password" autocomplete="current-password">
+        <button class="btn btn--primary" type="submit">Enter{{ icon('arrow') }}</button>
+      </span>
+    </label>
+    {% endif %}
+    {% if has_token and password_login %}
+    <details class="alt">
+      <summary>Use the access token instead</summary>
+      <label class="field">
+        <span class="field__label">Access token</span>
+        <input class="input" type="password" name="token" autocomplete="off" spellcheck="false">
+      </label>
+      <button class="btn btn--small" type="submit">Enter with the token</button>
+    </details>
+    {% elif has_token %}
+    <label class="field">
+      <span class="field__label">Access token</span>
+      <span class="signin__row">
+        <input class="input" type="password" name="token" autocomplete="off" spellcheck="false" autofocus aria-describedby="token-hint">
+        <button class="btn btn--primary" type="submit">Enter{{ icon('arrow') }}</button>
+      </span>
+    </label>
+    <p class="hint" id="token-hint">It is the WEB_ACCESS_TOKEN value in your .env file.</p>
+    {% endif %}
+  </form>
+  {% if can_reset or link_login %}
+  <details class="alt reveal d3">
+    <summary>I cannot sign in</summary>
+    <div class="stack">
+      {% if can_reset %}
+      <form method="post" action="/login/forgot" class="signin__row" novalidate>
+        {{ csrf(csrf_token) }}
+        <input class="input" type="text" name="email" placeholder="Email of your account" aria-label="Email of your account" autocomplete="email">
+        <button class="btn btn--small" type="submit">Email me a reset link</button>
+      </form>
+      {% endif %}
+      {% if link_login %}
+      <form method="post" action="/login/link" class="signin__row" novalidate>
+        {{ csrf(csrf_token) }}
+        <input class="input" type="text" name="email" placeholder="Email of your account" aria-label="Email of your account" autocomplete="email">
+        <button class="btn btn--small" type="submit">Email me a sign in link</button>
+      </form>
+      {% endif %}
+    </div>
+  </details>
+  {% endif %}
+  {% endif %}
+  <div class="fine reveal d4">
+    <p>Public, professional information only. A person reviews every result.</p>
+    <details>
+      <summary>Read the full notice</summary>
+      <p>{{ notice }}</p>
+      <p>{{ storage_notice }}</p>
+    </details>
+  </div>
+</section>
+<section class="landing__demo" aria-hidden="true">
+  <div class="demo">
+    <p class="demo__label">Example conversation</p>
+    <p class="demo__row demo__row--user play step1">Find Rust developers in Brno</p>
+    <p class="demo__row play step2">I will look for Rust developers in Brno and rank up to 5 of them against your requirements. Say yes to start.</p>
+    <p class="demo__row demo__row--user play step3">yes</p>
+    <ul class="demo__log play step4">
+      <li>{{ mark('supported') }}Read 6 public sources</li>
+      <li>{{ mark('supported') }}Three sources agree on the current employer</li>
+      <li>{{ mark('single-source') }}A conference talk appears in one source only</li>
+      <li>{{ mark('unknown') }}Certification: no public evidence</li>
+    </ul>
+    <div class="demo__result play step5"><span class="num">4.3</span><span>out of 5<br>best match, two warnings</span></div>
+  </div>
+</section>
+{% endblock %}

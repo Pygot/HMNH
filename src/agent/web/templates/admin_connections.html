@@ -1,0 +1,76 @@
+{# src/agent/web/templates/admin_connections.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, select, field %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}Connections | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>{{ 'Welcome. Let us connect the basics' if welcome else 'Connections' }}</h1>
+    <p class="meta">Everything here is optional and can be changed later. Keys are kept in the private settings file of this server and are never shown again.</p>
+  </div>
+  {% if welcome %}<div class="pagehead__tools"><a class="btn btn--small" href="/">Skip for now{{ icon('arrow') }}</a></div>{% endif %}
+</header>
+{{ admin_nav(section, can) }}
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+{% for check in checks %}
+<div class="note {{ 'note--ok' if check.ok else 'note--error' }}" role="status">{{ icon('check' if check.ok else 'warn') }}<div><strong>{{ 'Works' if check.ok else 'Did not work' }}</strong> {{ check.message }}</div></div>
+{% endfor %}
+
+<div class="narrow">
+  {% if problems %}
+  <div class="note" role="status">{{ icon('warn') }}<div>{% for problem in problems %}{{ problem }} {% endfor %}Until both are connected, searches cannot run. You can still manage people, roles and settings.</div></div>
+  {% elif service %}
+  <div class="note note--ok" role="status">{{ icon('check') }}<div>Language model: {{ service.llm_provider }}{% if service.llm_model %}, {{ service.llm_model }}{% endif %}. Search: {{ service.search_provider }}.</div></div>
+  {% endif %}
+
+  {% for entry in sections %}
+  {% set part = entry.section %}
+  <details class="more section"{% if opened == part.name or (welcome and part.name in ('llm', 'search')) %} open{% endif %}>
+    <summary><span>{{ part.title }}</span>{{ icon('chevron') }}</summary>
+    <p class="hint">{{ part.intro }}</p>
+    <form class="stack" method="post" action="/admin/connections/{{ part.name }}" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      {% for item in entry.fields %}
+      {% set f = item.field %}
+      {% if f.choices %}
+      <div class="field"><span class="field__label">{{ f.label }}</span>{{ select(f.key, f.choices, item.value) }}{% if f.hint %}<small class="hint">{{ f.hint }}</small>{% endif %}</div>
+      {% elif f.secret %}
+      <label class="field">
+        <span class="field__label">{{ f.label }}{% if item.saved %} <span class="kind">saved</span>{% endif %}</span>
+        <input class="input" type="password" name="{{ f.key }}" maxlength="400" autocomplete="new-password" placeholder="{{ 'Leave empty to keep the saved one' if item.saved else '' }}">
+        {% if f.hint %}<small class="hint">{{ f.hint }}</small>{% endif %}
+      </label>
+      {% if item.saved %}<label class="switch"><input type="checkbox" name="clear_{{ f.key }}" value="yes"><span class="switch__box" aria-hidden="true"></span><span class="switch__text"><strong>Remove the saved {{ f.label|lower }}</strong></span></label>{% endif %}
+      {% else %}
+      <label class="field">
+        <span class="field__label">{{ f.label }}</span>
+        <input class="input" type="text" name="{{ f.key }}" maxlength="400" value="{{ item.value }}" placeholder="{{ f.placeholder }}">
+        {% if f.hint %}<small class="hint">{{ f.hint }}</small>{% endif %}
+      </label>
+      {% endif %}
+      {% if item.locked %}<p class="hint">{{ f.key }} is also set in the server environment, and that value wins.</p>{% endif %}
+      {% endfor %}
+      {% if part.name == 'mail' %}
+      <label class="field">
+        <span class="field__label">Send a test message to (optional)</span>
+        <input class="input" type="text" name="test_to" maxlength="254" value="{{ own_email.email if own_email and own_email.email else '' }}" placeholder="you@example.com">
+      </label>
+      {% endif %}
+      {% if principal and principal.source != 'owner' %}
+      <label class="field">
+        <span class="field__label">Your password, to confirm the change</span>
+        <input class="input" type="password" name="confirm_password" maxlength="256" autocomplete="current-password">
+      </label>
+      {% endif %}
+      <div><button class="btn btn--primary" type="submit">{{ icon('check') }}{{ 'Save and check' if entry.testable else 'Save' }}</button></div>
+    </form>
+    {% if entry.testable %}
+    <form method="post" action="/admin/connections/test">{{ csrf(csrf_token) }}<input type="hidden" name="target" value="{{ part.name }}"><button class="btn btn--small" type="submit">Check the saved connection</button></form>
+    {% endif %}
+  </details>
+  {% endfor %}
+</div>
+{% endblock %}

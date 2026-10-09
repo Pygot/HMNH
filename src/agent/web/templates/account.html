@@ -1,0 +1,165 @@
+{# src/agent/web/templates/account.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, field, secret, switch, select, code, notes_box %}
+{% block title %}Account | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Your account</h1>
+    <p class="meta">{{ principal.name }}, role {{ principal.role }}</p>
+  </div>
+  <div class="pagehead__tools">
+    <form method="post" action="/logout">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">{{ icon('logout') }}Sign out</button></form>
+  </div>
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+
+<div class="narrow">
+  {% if user is none %}
+  <section class="section">
+    <h2>Access token</h2>
+    <p>You are signed in with the shared access token, so there is no personal profile to edit. Ask an administrator for an account to get your own password, two step sign in and API keys.</p>
+  </section>
+  {% else %}
+  <section class="section" id="profile">
+    <h2>Profile</h2>
+    <form class="stack" method="post" action="/account/profile" novalidate>
+      {{ csrf(csrf_token) }}
+      <dl class="facts">
+        <div><dt>Username</dt><dd>{{ user.username }}</dd></div>
+        <div><dt>Role</dt><dd>{{ principal.role }}</dd></div>
+      </dl>
+      {{ field('display_name', 'Your name', user.display_name, 'Eva Svobodova', 80) }}
+      {{ field('email', 'Email', user.email or '', 'eva@example.com', 254) }}
+      {% if user.has_password %}{{ secret('current', 'Current password (needed to change the email)', 'current-password') }}{% endif %}
+      <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Save profile</button></div>
+    </form>
+  </section>
+
+  <section class="section" id="password">
+    <h2>Password</h2>
+    <form class="stack" method="post" action="/account/password" novalidate>
+      {{ csrf(csrf_token) }}
+      {% if user.has_password %}{{ secret('current', 'Current password', 'current-password') }}{% endif %}
+      {{ secret('password', 'New password', 'new-password') }}
+      {{ secret('confirm', 'Repeat the new password', 'new-password') }}
+      <p class="hint">At least {{ password_min }} characters. Changing it signs you out on your other devices.</p>
+      <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Change password</button></div>
+    </form>
+  </section>
+
+  <section class="section" id="security">
+    <h2>Two step sign in</h2>
+    <p>
+      {% if user.totp_enabled %}An authenticator app is protecting this account. {{ recovery_left }} recovery {{ 'code is' if recovery_left == 1 else 'codes are' }} left.
+      {% else %}Ask for a code from an authenticator app after the password. It is optional unless your administrator requires it.{% endif %}
+    </p>
+    <div><a class="btn" href="/account/2fa">{{ 'Manage the authenticator' if user.totp_enabled else 'Set up an authenticator' }}{{ icon('arrow') }}</a></div>
+  </section>
+
+  <section class="section" id="email">
+    <h2>Email codes</h2>
+    {% if not user.email %}
+    <p class="hint">Add an email address above to confirm it and use email codes.</p>
+    {% elif not mail_ready %}
+    <p class="hint">Email is not connected on this server, so codes cannot be sent.</p>
+    {% elif not user.email_verified %}
+    <p>Confirm {{ user.email }} first. We send a code to it.</p>
+    <form class="signin__row" method="post" action="/account/email/code">{{ csrf(csrf_token) }}<button class="btn" type="submit">{{ icon('mail') }}Send a code</button></form>
+    <form class="signin__row" method="post" action="/account/email/confirm" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      <input class="input input--code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="Code" aria-label="Confirmation code">
+      <button class="btn btn--primary" type="submit">Confirm</button>
+    </form>
+    {% else %}
+    <p>{{ user.email }} is confirmed.</p>
+    <form class="stack" method="post" action="/account/email-login" novalidate>
+      {{ csrf(csrf_token) }}
+      <input type="hidden" name="enabled" value="{{ 'no' if user.email_code_login else 'yes' }}">
+      <p class="hint">{{ 'Signing in asks for a code sent to this address.' if user.email_code_login else 'Signing in can ask for a code sent to this address.' }}</p>
+      <div><button class="btn" type="submit">{{ 'Turn email codes off' if user.email_code_login else 'Turn email codes on' }}</button></div>
+    </form>
+    {% endif %}
+  </section>
+
+  <section class="section" id="sessions">
+    <h2>Where you are signed in</h2>
+    <div class="tablewrap">
+      <table class="table">
+        <thead><tr><th scope="col">Device</th><th scope="col">Address</th><th scope="col">Signed in</th><th scope="col">Last used</th><th scope="col"><span class="sr">Action</span></th></tr></thead>
+        <tbody>
+          {% for item in sessions %}
+          <tr>
+            <td>{{ item.agent|device }}{% if item.current %} <span class="kind">this one</span>{% endif %}</td>
+            <td class="num">{{ item.ip or '-' }}</td>
+            <td>{{ item.age_seconds|span }} ago</td>
+            <td>{{ item.idle_seconds|span }} ago</td>
+            <td>
+              {% if not item.current %}
+              <form method="post" action="/account/sessions/revoke">{{ csrf(csrf_token) }}<input type="hidden" name="handle" value="{{ item.handle }}"><button class="btn btn--small" type="submit">Sign out</button></form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if sessions|length > 1 %}
+    <form method="post" action="/account/sessions/revoke">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Sign out everywhere else</button></form>
+    {% endif %}
+  </section>
+
+  {% if keys_allowed %}
+  <section class="section" id="keys">
+    <h2>API keys</h2>
+    <p class="hint">A key lets a script act as you, with at most your own permissions. It is shown once.</p>
+    {% if new_key %}
+    <div class="note note--ok" role="status">{{ icon('check') }}<div><strong>Copy the key now, it will not be shown again.</strong>{{ code(new_key) }}</div></div>
+    {% endif %}
+    {% if keys %}
+    <div class="tablewrap">
+      <table class="table">
+        <thead><tr><th scope="col">Name</th><th scope="col">Starts with</th><th scope="col">Expires</th><th scope="col">Last used</th><th scope="col"><span class="sr">Action</span></th></tr></thead>
+        <tbody>
+          {% for key in keys %}
+          <tr>
+            <td>{{ key.name }}{% if key.permissions is not none %} <span class="kind">{{ key.permissions|length }} permissions</span>{% endif %}</td>
+            <td class="num">{{ key.prefix }}</td>
+            <td>{% if key.revoked %}revoked{% elif key.expires %}{{ key.expires|stamp }}{% else %}never{% endif %}</td>
+            <td>{{ key.last_used|stamp if key.last_used else 'never' }}</td>
+            <td>{% if not key.revoked %}<form method="post" action="/account/keys/{{ key.id }}/revoke">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Revoke</button></form>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+    <details class="more">
+      <summary><span>Create a key</span>{{ icon('chevron') }}</summary>
+      <form class="stack" method="post" action="/account/keys" novalidate>
+        {{ csrf(csrf_token) }}
+        {{ field('name', 'Name', '', 'Reporting script', 60) }}
+        <div class="field"><span class="field__label">Valid for</span>{{ select('days', key_days, key_default) }}</div>
+        {% if user.has_password %}{{ secret('current', 'Current password', 'current-password') }}{% endif %}
+        <fieldset class="group">
+          <legend>What it may do</legend>
+          <p class="hint">Leave everything unticked to allow all of your permissions.</p>
+          {% for group, entries in key_choices %}
+          <p class="group-title">{{ group }}</p>
+          <div class="seg seg--multi">
+            {% for value, label in entries %}
+            <label class="seg__item"><input type="checkbox" name="permission" value="{{ value }}"><span>{{ icon('check') }}{{ label }}</span></label>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </fieldset>
+        <div><button class="btn btn--primary" type="submit">{{ icon('plus') }}Create the key</button></div>
+      </form>
+    </details>
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

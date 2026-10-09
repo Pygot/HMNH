@@ -1,0 +1,46 @@
+{# src/agent/web/templates/_charts.html #}
+{% macro legend(plot) %}
+{% if plot.legend|length > 1 %}
+<ul class="legend">{% for item in plot.legend %}<li><i class="swatch swatch--{{ item.series }}"></i>{{ item.name }}</li>{% endfor %}</ul>
+{% endif %}
+{% endmacro %}
+
+{% macro grouped(plot) %}
+<figure class="plotbox">
+  <svg class="plot" viewBox="0 0 {{ plot.width }} {{ plot.height }}" role="img" aria-label="{{ plot.description }}">
+    {% for tick in plot.ticks %}
+    <line class="plot__grid" x1="{{ plot.left }}" x2="{{ plot.right_x }}" y1="{{ tick.y }}" y2="{{ tick.y }}"/>
+    <text class="plot__text" x="{{ plot.left - 8 }}" y="{{ tick.y + 4 }}" text-anchor="end">{{ tick.label }}</text>
+    {% endfor %}
+    {% for bar in plot.bars %}<rect class="plot__bar plot__bar--{{ bar.series }}" x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.width }}" height="{{ bar.height }}" rx="2"/>{% endfor %}
+    {% for mark in plot.marks %}<text class="plot__text" x="{{ mark.x }}" y="{{ plot.base_y + 18 }}" text-anchor="middle">{{ mark.label }}</text>{% endfor %}
+  </svg>
+  {{ legend(plot) }}
+</figure>
+{% endmacro %}
+
+{% macro lines(plot) %}
+<figure class="plotbox">
+  <svg class="plot" viewBox="0 0 {{ plot.width }} {{ plot.height }}" role="img" aria-label="{{ plot.description }}">
+    {% for tick in plot.ticks %}
+    <line class="plot__grid" x1="{{ plot.left }}" x2="{{ plot.right_x }}" y1="{{ tick.y }}" y2="{{ tick.y }}"/>
+    <text class="plot__text" x="{{ plot.left - 8 }}" y="{{ tick.y + 4 }}" text-anchor="end">{{ tick.label }}</text>
+    {% endfor %}
+    {% for index, points in plot.lines %}<polyline class="plot__line plot__line--{{ index }}" points="{{ points }}"/>{% endfor %}
+    {% for mark in plot.marks %}<text class="plot__text" x="{{ mark.x }}" y="{{ plot.base_y + 18 }}" text-anchor="middle">{{ mark.label }}</text>{% endfor %}
+  </svg>
+  {{ legend(plot) }}
+</figure>
+{% endmacro %}
+
+{% macro rows(plot) %}
+<figure class="plotbox">
+  <svg class="plot" viewBox="0 0 {{ plot.width }} {{ plot.height }}" role="img" aria-label="{{ plot.description }}">
+    {% for row in plot.rows %}
+    <text class="plot__text" x="0" y="{{ row.y + row.height - 3 }}">{{ row.label }}</text>
+    <rect class="plot__bar plot__bar--0" x="{{ plot.label_width }}" y="{{ row.y }}" width="{{ row.width }}" height="{{ row.height }}" rx="2"/>
+    <text class="plot__text" x="{{ plot.label_width + row.width + 8 }}" y="{{ row.y + row.height - 3 }}">{{ row.value }}</text>
+    {% endfor %}
+  </svg>
+</figure>
+{% endmacro %}

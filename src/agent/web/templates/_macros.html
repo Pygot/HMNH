@@ -1,0 +1,333 @@
+{# src/agent/web/templates/_macros.html #}
+{% macro csrf(token) %}<input type="hidden" name="csrf_token" value="{{ token }}">{% endmacro %}
+
+{% macro icon(name) %}<svg class="i" aria-hidden="true"><use href="#i-{{ name }}"/></svg>{% endmacro %}
+
+{% macro sprite() %}
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.5-4.5"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H4v16h5M16 8l4 4-4 4M20 12H9"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11"/><path d="M5 15V4h11"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7zM14 3v4h4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18v.01"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+  <symbol id="i-graph" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="9" y="15" width="6" height="6"/><path d="M8 6l8-.5M6 9l4 6M18 8l-4 7"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="M20 11.5l-8 8a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><rect x="14" y="5" width="4" height="4"/><rect x="6" y="15" width="4" height="4"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2H4.5zM10 21h4"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><rect x="7" y="12" width="3" height="5"/><rect x="12" y="8" width="3" height="9"/><rect x="17" y="5" width="3" height="12"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.6-.8-1.5-1.2-2.5-1.2-1.4 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-1.9-.4-2.5-1.2M12 6.5V8M12 16v1.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.6 3-6 7-6s7 2.4 7 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.4.6 4 2.4 4 5"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+</svg>
+{% endmacro %}
+
+{% macro mark(value) %}{% set shape = {'supported': 'full', 'met': 'full', 'done': 'full', 'high': 'full', 'single-source': 'half', 'partial': 'half', 'medium': 'half', 'running': 'half', 'needs_input': 'half', 'uncertain': 'none', 'low': 'none', 'unknown': 'dash', 'unmet': 'cross', 'failed': 'cross'}.get(value, 'none') %}<i class="mark mark--{{ shape }}" aria-hidden="true"></i>{% endmacro %}
+
+{% macro tag(value) %}<span class="tag">{{ mark(value) }}{{ value|replace('-', ' ')|replace('_', ' ')|capitalize }}</span>{% endmacro %}
+
+{% macro scale_svg(scale, overall) %}
+<svg class="scale" viewBox="0 0 {{ scale.width }} {{ scale.height }}" role="img" aria-label="Rating {{ '%.1f'|format(overall) }} out of 5">
+  <line class="scale__track" x1="{{ scale.left }}" x2="{{ scale.ticks[-1].x }}" y1="{{ scale.y }}" y2="{{ scale.y }}"/>
+  <line class="scale__fill" pathLength="1" x1="{{ scale.left }}" x2="{{ scale.fill }}" y1="{{ scale.y }}" y2="{{ scale.y }}"/>
+  {% for tick in scale.ticks %}
+  <line class="scale__tick" x1="{{ tick.x }}" x2="{{ tick.x }}" y1="{{ scale.tick_top }}" y2="{{ scale.tick_bottom }}"/>
+  <text class="scale__label" x="{{ tick.x }}" y="{{ scale.label_y }}" text-anchor="middle">{{ tick.label }}</text>
+  {% endfor %}
+  {% if scale.raw is not none %}
+  <line class="scale__cap" x1="{{ scale.fill }}" x2="{{ scale.raw }}" y1="{{ scale.y }}" y2="{{ scale.y }}"/>
+  <rect class="scale__raw" x="{{ scale.raw - 7 }}" y="{{ scale.y - 7 }}" width="14" height="14"/>
+  {% endif %}
+  <rect class="scale__mark" x="{{ scale.fill - 8 }}" y="{{ scale.y - 8 }}" width="16" height="16"/>
+</svg>
+{% endmacro %}
+
+{% macro mix_svg(overview) %}
+<svg class="mix" viewBox="0 0 {{ overview.bar_width }} {{ overview.bar_height }}" preserveAspectRatio="none" role="img" aria-label="Agreement between sources">
+  {% for part in overview.mix %}<rect class="mix__{{ part.tag }}" x="{{ part.x }}" y="0" width="{{ part.width }}" height="{{ overview.bar_height }}"/>{% endfor %}
+</svg>
+{% endmacro %}
+
+{% macro links(urls) %}
+<ul class="links">
+  {% for url in urls %}
+  <li><a href="{{ url }}" target="_blank" rel="noopener noreferrer nofollow" referrerpolicy="no-referrer">{{ url }}</a></li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+
+{% macro errors_box(errors) %}
+{% if errors %}
+<div class="note note--error" role="alert">
+  {{ icon('warn') }}
+  <div><strong>Please check this</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro segmented(name, values, selected) %}
+<div class="seg" role="radiogroup">
+  {% for value in values %}
+  <label class="seg__item"><input type="radio" name="{{ name }}" value="{{ value.value }}"{% if selected == value.value %} checked{% endif %}><span>{{ value.value|replace('_', ' ')|capitalize }}</span></label>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro toggles(name, networks, selected) %}
+<div class="seg seg--multi">
+  {% for network in networks %}
+  <label class="seg__item"><input type="checkbox" name="{{ name }}" value="{{ network.value }}"{% if network.value in selected %} checked{% endif %}><span>{{ icon('check') }}{{ network.value|network_label }}</span></label>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro switch(name, label, on, hint='') %}
+<label class="switch">
+  <input type="checkbox" name="{{ name }}" value="yes"{% if on %} checked{% endif %}>
+  <span class="switch__box" aria-hidden="true"></span>
+  <span class="switch__text"><strong>{{ label }}</strong>{% if hint %}<small>{{ hint }}</small>{% endif %}</span>
+</label>
+{% endmacro %}
+
+{% macro select(name, options, selected) %}
+<div class="select" data-select>
+  <input type="hidden" name="{{ name }}" value="{{ selected }}">
+  <button type="button" class="select__button" aria-haspopup="listbox" aria-expanded="false">
+    <span>{% for value, label in options %}{% if value|string == selected|string %}{{ label }}{% endif %}{% endfor %}</span>{{ icon('chevron') }}
+  </button>
+  <ul class="select__list" role="listbox" tabindex="-1">
+    {% for value, label in options %}
+    <li role="option" data-value="{{ value }}" aria-selected="{{ 'true' if value|string == selected|string else 'false' }}">{{ label }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endmacro %}
+
+{% macro field(name, label, value, placeholder, size) %}
+<label class="field">
+  <span class="field__label">{{ label }}</span>
+  <input class="input" type="text" name="{{ name }}" maxlength="{{ size }}" value="{{ value }}" placeholder="{{ placeholder }}" autocomplete="off">
+</label>
+{% endmacro %}
+
+{% macro number(name, label, value, low, high, step, placeholder='') %}
+<label class="field">
+  <span class="field__label">{{ label }}</span>
+  <input class="input input--short" type="text" inputmode="decimal" name="{{ name }}" data-min="{{ low }}" data-max="{{ high }}" value="{{ value }}" placeholder="{{ placeholder }}" autocomplete="off">
+</label>
+{% endmacro %}
+
+{% macro meter(value, top) %}
+<span class="meter"><i class="p{{ (value / top * 20)|round|int * 5 }}"></i></span>
+{% endmacro %}
+
+{% macro scepticism_block(rating, anchor='') %}
+{% set sc = rating.scepticism %}
+<div{% if anchor %} id="{{ anchor }}"{% endif %} class="sceptic">
+  {% if sc.level.value == 'none' %}
+  <h3>Scepticism review</h3>
+  <p>No warning signs were found (mode: {{ sc.mode.value }}).</p>
+  {% else %}
+  <h3>Scepticism review: {{ sc.level.value }}</h3>
+  <p>
+    This profile deserves extra caution.
+    {% if rating.raw_overall != rating.overall %}
+    The rating was reduced from {{ '%.1f'|format(rating.raw_overall) }} to {{ '%.1f'|format(rating.overall) }}.
+    {% endif %}
+  </p>
+  <ul class="flags">
+    {% for flag in sc.flags %}
+    <li>{{ tag(flag.severity.value) }}<span>{{ flag.message }}</span></li>
+    {% endfor %}
+  </ul>
+  <h4>What to do next</h4>
+  <ul class="plain">{% for item in sc.guidance %}<li>{{ item }}</li>{% endfor %}</ul>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro rating_block(rating, show_target=true) %}
+<div>
+  {% if show_target %}<p class="muted">Rated against: {{ rating.target }}</p>{% endif %}
+  <ul class="criteria">
+    {% for item in rating.criteria %}
+    <li class="criterion">
+      <div class="criterion__head">
+        <span>{{ item.criterion.value|replace('_', ' ')|capitalize }}</span>
+        <strong class="num">{{ item.score }} / 5</strong>
+      </div>
+      {{ meter(item.score, 5) }}
+      <p>{{ item.justification }}</p>
+      {% if item.source_urls %}{{ links(item.source_urls) }}{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endmacro %}
+
+{% macro claim_list(claims) %}
+<ul class="claims">
+  {% for claim in claims %}
+  <li>
+    <p>{{ claim.statement }}</p>
+    <p class="muted">{{ claim.category.value }}, {{ claim.confidence.value }} confidence{% if claim.year %}, {{ claim.year }}{% endif %}</p>
+    {{ links([claim.source_url]) }}
+  </li>
+  {% else %}
+  <li class="muted">No claims could be extracted from this source.</li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+
+{% macro live(job, view, running, after=0) %}
+<div class="live" data-live="/jobs/{{ job.id }}/events" data-after="{{ after }}" data-running="{{ '1' if running else '' }}" data-reload="{{ '1' if running else '' }}" data-view="{{ view }}" data-title="{{ job.title }}"></div>
+{{ task_icon_set() }}
+{% endmacro %}
+
+{% macro tie_entry(buddy) %}
+<div class="railtie" data-buddy data-mode="{{ buddy.mode }}" data-page="{{ buddy.page }}" data-config='{{ buddy.config|tojson }}'>
+  <button type="button" class="railtie__button" data-tie-open aria-expanded="false" aria-controls="tiepanel" aria-label="Talk to {{ buddy.name }}">
+    <span class="railtie__figure">{{ tie('tie') }}</span>
+    <span class="railtie__text"><strong>{{ buddy.name }}</strong><small data-tie-hint>{{ 'Ready to talk' if buddy.nudges else 'Quiet, tap to talk' }}</small></span>
+  </button>
+</div>
+{% endmacro %}
+
+{% macro tie_panel(buddy) %}
+<div class="nudge" data-nudge hidden>
+  <p class="nudge__who">{{ buddy.name }}</p>
+  <p class="nudge__line" data-line></p>
+</div>
+<p class="sr" data-sr role="status" aria-live="polite"></p>
+<section class="tiepanel" id="tiepanel" data-tiepanel hidden role="dialog" aria-label="Conversation with {{ buddy.name }}">
+  <header class="tiepanel__head">
+    <div>
+      <strong>{{ buddy.name }}</strong>
+      <span data-tie-status>Here to think it through with you</span>
+    </div>
+    <div class="tiepanel__tools">
+      <span class="clock" data-clock hidden>00:00</span>
+      <button type="button" class="chip" data-focus-toggle>Focus {{ buddy.focus_minutes }} min</button>
+      {% if buddy.voice_available %}<button type="button" class="ibtn" data-voice-toggle aria-pressed="{{ 'true' if buddy.mode == 'voice' else 'false' }}" aria-label="Speak replies">{{ icon('speaker') }}</button>{% endif %}
+      <details class="tmenu">
+        <summary class="ibtn" aria-label="More">{{ icon('more') }}</summary>
+        <div class="tmenu__list">
+          <button type="button" data-nudge-toggle aria-pressed="{{ 'true' if buddy.nudges else 'false' }}">{{ 'Nudges are on' if buddy.nudges else 'Nudges are off' }}</button>
+          <button type="button" data-tie-clear>Clear the conversation</button>
+        </div>
+      </details>
+      <button type="button" class="ibtn" data-tie-close aria-label="Close">{{ icon('close') }}</button>
+    </div>
+  </header>
+  <ol class="tiefeed" data-tiefeed aria-live="polite"></ol>
+  <form class="tiecompose" data-tieform>
+    <textarea name="text" rows="1" maxlength="1200" placeholder="Think out loud. Plan the search, weigh a candidate, or just talk." aria-label="Message to {{ buddy.name }}"></textarea>
+    {% if buddy.voice_available %}<button type="button" class="ibtn" data-tie-mic aria-label="Speak to {{ buddy.name }}">{{ icon('mic') }}</button>{% endif %}
+    <button class="ibtn ibtn--solid" type="submit" aria-label="Send">{{ icon('up') }}</button>
+  </form>
+</section>
+{% endmacro %}
+
+{% macro company_block(profile) %}
+<section id="company" class="block">
+  <header class="block__head"><h2>Hiring company</h2><span class="muted">{{ profile.name }}</span></header>
+  <ul class="facts-list">
+    {% for fact in profile.facts %}
+    <li><span class="kind">{{ fact.kind.value }}</span><div><p>{{ fact.statement }}</p>{% if fact.source_url %}{{ links([fact.source_url]) }}{% else %}<p class="muted small">Provided by you</p>{% endif %}</div></li>
+    {% else %}
+    <li class="muted">No public facts could be confirmed.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endmacro %}
+
+{% macro requirements_block(assessment, anchor='requirements', nested=false) %}
+<section id="{{ anchor }}" class="{{ 'subblock' if nested else 'block' }}">
+  <header class="block__head"><h2>Requirements</h2><span class="muted">{{ (assessment.coverage * 100)|round|int }}% covered</span></header>
+  <ul>
+    {% for item in assessment.results %}
+    <li class="reqitem">
+      {{ tag(item.status.value) }}
+      <div>
+        <p><strong>{{ item.requirement.description }}</strong> <span class="muted small">{{ item.requirement.kind.value }}, {{ 'must have' if item.requirement.priority.value == 'must' else 'nice to have' }}</span></p>
+        <p>{{ item.justification }}</p>
+        {% if item.source_urls %}{{ links(item.source_urls) }}{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if assessment.must_missing %}<p class="hint">Must-have requirements without evidence: {{ assessment.must_missing|join(', ') }}.</p>{% endif %}
+</section>
+{% endmacro %}
+
+{% macro drafts_block(drafts, job_id, send=false) %}
+<section id="drafts" class="block">
+  <header class="block__head">
+    <h2>Email drafts</h2>
+    <a class="textlink" href="/emails?job={{ job_id }}">Open the editor{{ icon('arrow') }}</a>
+  </header>
+  {% if send %}
+  <p class="hint">Review a draft, then copy it or send it from here. Nothing is sent until you confirm each message.</p>
+  {% else %}
+  <p class="hint">Text only. Nothing is sent from here: review a draft, copy it and send it from your own mail app.</p>
+  {% endif %}
+  {% for template, items in drafts %}
+  {% set group = loop.index %}
+  <details class="more"{% if loop.first %} open{% endif %}>
+    <summary><span>{{ template.name }} <span class="muted">({{ template.category.value }})</span></span>{{ icon('chevron') }}</summary>
+    <div class="drafts">
+      {% for draft in items %}
+      <article class="draft" data-draft="Subject: {{ draft.subject }}&#10;&#10;{{ draft.body }}">
+        <header>
+          <strong>{{ draft.recipient }}</strong>
+          <div class="draft__actions">
+            <button type="button" class="btn btn--small" data-copy="d{{ group }}-{{ loop.index }}-s">Copy subject</button>
+            <button type="button" class="btn btn--small" data-copy="d{{ group }}-{{ loop.index }}-b">Copy text</button>
+            <button type="button" class="btn btn--small btn--primary" data-copy="">{{ icon('copy') }}Copy all</button>
+            {% if send and template.category.value != 'team' %}<a class="btn btn--small" href="/emails/compose?job={{ job_id }}&amp;template={{ template.id }}&amp;index={{ loop.index0 }}">{{ icon('mail') }}Send by email</a>{% endif %}
+          </div>
+        </header>
+        <p class="draft__subject" id="d{{ group }}-{{ loop.index }}-s">{{ draft.subject }}</p>
+        <pre class="draft__body" id="d{{ group }}-{{ loop.index }}-b">{{ draft.body }}</pre>
+      </article>
+      {% endfor %}
+    </div>
+  </details>
+  {% else %}
+  <p class="empty">No templates are available.</p>
+  {% endfor %}
+</section>
+{% endmacro %}
+
+{% macro code(text) %}
+<div class="code"><button type="button" class="ibtn" data-copy aria-label="Copy to clipboard">{{ icon('copy') }}</button><pre>{{ text }}</pre></div>
+{% endmacro %}
+
+{% macro secret(name, label, autocomplete) %}
+<label class="field">
+  <span class="field__label">{{ label }}</span>
+  <input class="input" type="password" name="{{ name }}" maxlength="256" autocomplete="{{ autocomplete }}">
+</label>
+{% endmacro %}
+
+{% macro notes_box(notes) %}{% for note in notes %}<div class="note note--ok" role="status">{{ icon('check') }}<div>{{ note }}</div></div>{% endfor %}{% endmacro %}

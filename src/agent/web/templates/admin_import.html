@@ -1,0 +1,66 @@
+{# src/agent/web/templates/admin_import.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, select, switch %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}Import | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Import data</h1>
+    <p class="meta">Bring in an export from another server or a spreadsheet. You see what would change first, and nothing is saved unless every row is fine.</p>
+  </div>
+</header>
+{{ admin_nav(section, can) }}
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="narrow">
+  {% if result %}
+  <section class="section">
+    <h2>{{ 'What changed' if result.applied else 'What would change' }}</h2>
+    <div class="tablewrap">
+      <table class="table">
+        <thead><tr><th scope="col">Data</th><th scope="col">New</th><th scope="col">Updated</th><th scope="col">Already there</th></tr></thead>
+        <tbody>
+          {% for item in result.outcomes %}
+          <tr><td>{{ item.dataset }}</td><td class="num">{{ item.created }}</td><td class="num">{{ item.updated }}</td><td class="num">{{ item.skipped }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% for item in result.outcomes %}{% if item.errors %}
+    <div class="note note--error" role="alert">{{ icon('warn') }}<div><strong>{{ item.dataset }} needs fixing</strong><ul>{% for error in item.errors %}<li>{{ error }}</li>{% endfor %}</ul></div></div>
+    {% endif %}{% endfor %}
+    {% if token and result.ok and not result.applied %}
+    <form class="toolbar" method="post" action="/admin/import/confirm" novalidate>
+      {{ csrf(csrf_token) }}
+      <input type="hidden" name="token" value="{{ token }}">
+      <button class="btn btn--primary" type="submit">{{ icon('check') }}Import it now</button>
+      <a class="btn" href="/admin/import">Cancel</a>
+    </form>
+    <p class="hint">The preview is kept for {{ minutes }} minutes.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="section">
+    <h2>Choose a file</h2>
+    <form class="stack" method="post" action="/admin/import" enctype="multipart/form-data" novalidate>
+      {{ csrf(csrf_token) }}
+      <label class="field">
+        <span class="field__label">File (JSON export or CSV, up to {{ limit_mb }} MB)</span>
+        <span class="filepick" data-filepick>
+          <input class="sr" type="file" name="file" accept=".json,.csv" data-file-input>
+          <span class="btn btn--small" data-file-button>{{ icon('plus') }}Choose a file</span>
+          <span class="muted" data-file-name>No file chosen</span>
+        </span>
+      </label>
+      <div class="field"><span class="field__label">If it is a CSV, which data is it</span>{{ select('dataset', csv_options, 'candidates') }}</div>
+      <div class="field"><span class="field__label">What if something already exists</span>{{ select('strategy', strategies, strategy) }}</div>
+      {{ switch('purpose', 'Routines in this file are for a lawful hiring purpose', false, 'Needed only when the file contains routines. They arrive paused.') }}
+      <div><button class="btn btn--primary" type="submit">{{ icon('search') }}Check the file</button></div>
+    </form>
+    <p class="hint">You can import: {% for item in datasets %}{{ item.label|lower }}{{ ', ' if not loop.last }}{% endfor %}. Accounts, roles, the audit log and reports are export only.</p>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{# src/agent/web/templates/error.html #}
+{% extends "base.html" %}
+{% block title %}{{ title }} | HMNH{% endblock %}
+{% block main_class %}centered{% endblock %}
+{% block content %}
+<section class="gate">
+  {{ logo('logo logo--gate') }}
+  <h1>{{ title }}</h1>
+  {% if detail %}<p class="muted">{{ detail }}</p>{% endif %}
+  <p><a class="btn btn--primary" href="/">Back to the start</a></p>
+</section>
+{% endblock %}

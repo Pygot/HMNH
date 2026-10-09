@@ -1,0 +1,24 @@
+<!-- src/agent/web/static/logo.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 547 456">
+<g fill="none" stroke="currentColor" stroke-width="12.8" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10">
+<path class="s1" pathLength="1" d="M156.5 155.9L227.3 33.8L315.3 33.8L512.6 374.8L484.9 424L324.8 424"/>
+<path class="s2" pathLength="1" d="M217.4 424L57.8 424L30.1 374.6L149.7 167.9"/>
+<path class="s3" pathLength="1" d="M147.4 271L61.1 420.2"/>
+<path class="s4" pathLength="1" d="M324.8 372.7L513.8 372.7"/>
+<path class="s5" pathLength="1" d="M234.1 215.5L143.2 372.8L217.4 372.7"/>
+<path class="s6" pathLength="1" d="M167.5 324.2L217.4 324.2"/>
+<path class="s7" pathLength="1" stroke-width="15" d="M114.2 219.5L199.7 269.2"/>
+<path class="s8" pathLength="1" d="M326.4 55.2L241.4 202.7"/>
+<path class="s9" pathLength="1" d="M272.3 151.5L371.6 324L324.9 324.3"/>
+<path class="s10" pathLength="1" d="M300.1 101.6L351.4 192"/>
+<path class="s11" pathLength="1" d="M395.6 273L451.1 369.5"/>
+<path class="s12" pathLength="1" d="M205.4 170.2L174.9 223"/>
+<path class="s13" pathLength="1" stroke-width="15" d="M289.3 183L459.8 283.1"/>
+<path class="s14" pathLength="1" stroke-width="15" d="M234.7 30.8L216.8 153"/>
+<path class="s15" pathLength="1" d="M215.2 152.6L324.3 54.9"/>
+<path class="s16" pathLength="1" d="M226.4 136.4L265.4 77.8L286.1 50.3L306.7 33.2"/>
+<path class="s17" pathLength="1" stroke-width="14.6" d="M234.8 317.8L234.8 430.5"/>
+<path class="s18" pathLength="1" stroke-width="14.6" d="M307.6 317.8L307.6 430.5"/>
+<path class="s19" pathLength="1" stroke-width="14.6" d="M234.8 373.7L307.6 373.7"/>
+</g>
+</svg>

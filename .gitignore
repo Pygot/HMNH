@@ -1,0 +1,15 @@
+# .gitignore
+.venv/
+.idea/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+outputs/
+email_templates/
+*.egg-info/
+dist/
+.coverage
+.env
+.env.*
+!.env.example
+data/

@@ -1,0 +1,101 @@
+{# src/agent/web/templates/base.html #}
+{% from "_macros.html" import csrf, icon, sprite, tie_entry, tie_panel %}
+<!doctype html>
+<html lang="en" data-theme="{{ prefs.theme.value }}" data-density="{{ prefs.density.value }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>{% block title %}HMNH{% endblock %}</title>
+  <link rel="stylesheet" href="{{ asset('app.css') }}">
+  {% if prefs.backdrop %}<link rel="stylesheet" href="{{ asset('backdrop.css') }}">{% endif %}
+  {% if authenticated %}
+  <link rel="stylesheet" href="{{ asset('chat.css') }}">
+  <link rel="stylesheet" href="{{ asset('buddy.css') }}">
+  {% endif %}
+  <link rel="icon" type="image/svg+xml" href="{{ asset('logo.svg') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" data-csrf="{{ csrf_token }}" data-voice="{{ 'on' if voice_enabled else '' }}" data-seconds="{{ record_seconds }}">
+  {% if prefs.backdrop %}<div class="backdrop" aria-hidden="true"><i></i><i></i><i></i></div>{% endif %}
+  {{ sprite() }}
+  <a class="skip" href="#content">Skip to content</a>
+  {% if authenticated %}
+  <div class="shell" data-shell>
+    <header class="topbar">
+      <button type="button" class="ibtn" data-rail-toggle aria-label="Open the menu" aria-expanded="false" aria-controls="rail">{{ icon('menu') }}</button>
+      <a class="brand" href="/">{{ logo('logo') }}<span>HMNH</span></a>
+    </header>
+    <aside class="rail" id="rail" aria-label="Main">
+      <a class="brand" href="/">{{ logo('logo') }}<span>HMNH</span></a>
+      {% if 'chat.use' in can %}
+      <a class="newchat" href="/">{{ icon('plus') }}<span>New chat</span></a>
+      <label class="find">
+        {{ icon('search') }}
+        <input type="text" data-find placeholder="Search chats" autocomplete="off" spellcheck="false" aria-label="Search your chats">
+      </label>
+      <nav class="threads" aria-label="Chats">
+        <ul data-threads>
+          {% for item in threads %}
+          <li data-thread-row="{{ item.id }}">
+            <a class="thread{% if thread and thread.id == item.id %} is-active{% endif %}" href="/c/{{ item.id }}"><span>{{ item.title }}</span></a>
+            <button type="button" class="thread__x" data-delete-thread="{{ item.id }}" aria-label="Delete this chat">{{ icon('close') }}</button>
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="threads__note" data-threads-empty{% if threads %} hidden{% endif %}>Your chats will appear here.</p>
+        <p class="threads__note" data-none hidden>No chat matches.</p>
+      </nav>
+      {% else %}
+      <div class="threads"></div>
+      {% endif %}
+      <nav class="rail__foot" aria-label="Tools">
+        {% if 'messages.use' in can and policy.messaging_enabled %}
+        <a class="rail__link{% if active == 'messages' %} is-active{% endif %}" href="/messages">{{ icon('chat') }}<span>Messages{% if inbox.messages %} ({{ inbox.messages }}){% endif %}</span></a>
+        <a class="rail__link{% if active == 'announcements' %} is-active{% endif %}" href="/announcements">{{ icon('bell') }}<span>Announcements{% if inbox.announcements %} ({{ inbox.announcements }}){% endif %}</span></a>
+        {% endif %}
+        {% if 'stats.view' in can %}<a class="rail__link{% if active == 'dashboard' %} is-active{% endif %}" href="/dashboard">{{ icon('chart') }}<span>Dashboard</span></a>{% endif %}
+        {% if 'candidates.view' in can and policy.candidates_enabled %}<a class="rail__link{% if active == 'candidates' %} is-active{% endif %}" href="/candidates">{{ icon('users') }}<span>Candidates</span></a>{% endif %}
+        {% if 'finance.view' in can and policy.finance_enabled %}<a class="rail__link{% if active == 'finance' %} is-active{% endif %}" href="/finance">{{ icon('coin') }}<span>Finance</span></a>{% endif %}
+        {% if 'routines.view' in can and policy.routines_enabled %}<a class="rail__link{% if active == 'routines' %} is-active{% endif %}" href="/routines">{{ icon('clock') }}<span>Routines</span></a>{% endif %}
+        {% if 'emails.view' in can %}<a class="rail__link{% if active == 'emails' %} is-active{% endif %}" href="/emails">{{ icon('mail') }}<span>Emails</span></a>{% endif %}
+        {% if prefs.show_api and 'api.use' in can %}<a class="rail__link{% if active == 'api' %} is-active{% endif %}" href="/api">{{ icon('code') }}<span>API</span></a>{% endif %}
+        {% if admin_access %}<a class="rail__link{% if active == 'admin' %} is-active{% endif %}" href="/admin">{{ icon('shield') }}<span>Administration</span></a>{% endif %}
+        <a class="rail__link{% if active == 'account' %} is-active{% endif %}" href="/account">{{ icon('user') }}<span>Account</span></a>
+        <a class="rail__link{% if active == 'settings' %} is-active{% endif %}" href="/settings">{{ icon('sliders') }}<span>Settings</span></a>
+        {% if 'tie.use' in can %}{{ tie_entry(buddy) }}{% endif %}
+      </nav>
+    </aside>
+    <div class="scrim" data-rail-toggle></div>
+  {% endif %}
+    <main id="content" class="{{ 'stage' if authenticated else 'solo' }} {% block main_class %}{% endblock %}">
+      {% if prefs_reset and authenticated %}
+      <div class="note" role="status">{{ icon('warn') }}<div>Your saved settings could not be read and were reset to the defaults.</div></div>
+      {% endif %}
+      {% if authenticated and banner and active != 'announcements' %}
+      <aside class="banner" aria-label="Announcements">
+        {% for item in banner %}
+        <div class="banner__line">
+          <span><strong>{{ item.title }}</strong> <span class="muted">{{ item.author_name }}</span></span>
+          <span><a class="textlink" href="/announcements#a-{{ item.id }}">Read</a>
+            <form method="post" action="/announcements/{{ item.id }}/read">{{ csrf(csrf_token) }}<input type="hidden" name="next" value="/"><button class="textlink" type="submit">Dismiss</button></form></span>
+        </div>
+        {% endfor %}
+      </aside>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  {% if authenticated %}
+  </div>
+  {% if 'tie.use' in can %}{{ tie_panel(buddy) }}{% endif %}
+  {% endif %}
+  <div class="toast" role="status" aria-live="polite"></div>
+  <script src="{{ asset('app.js') }}" nonce="{{ nonce }}" defer></script>
+  {% if authenticated %}
+  <script src="{{ asset('live.js') }}" nonce="{{ nonce }}" defer></script>
+  {% if 'tie.use' in can %}<script src="{{ asset('buddy.js') }}" nonce="{{ nonce }}" defer></script>{% endif %}
+  {% endif %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

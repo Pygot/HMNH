@@ -1,0 +1,25 @@
+/* src/agent/web/static/backdrop.css */
+:root {
+  --glow: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.05));
+  --shade-glow: light-dark(rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.5));
+  --vignette: light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4));
+}
+.backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; contain: strict; pointer-events: none; }
+.backdrop::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 38%, transparent 42%, var(--vignette) 100%); }
+.backdrop i { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; background: radial-gradient(circle, var(--glow) 0%, transparent 66%); will-change: transform; animation: drift-a 62s ease-in-out infinite alternate; }
+.backdrop i:nth-child(1) { left: -22vmax; top: -26vmax; }
+.backdrop i:nth-child(2) { right: -28vmax; top: 8vmax; background: radial-gradient(circle, var(--shade-glow) 0%, transparent 66%); animation-name: drift-b; animation-duration: 78s; }
+.backdrop i:nth-child(3) { left: 12vmax; bottom: -38vmax; animation-name: drift-c; animation-duration: 70s; }
+html[data-paused] .backdrop i { animation-play-state: paused; }
+@keyframes drift-a { to { transform: translate3d(20vmax, 14vmax, 0) scale(1.15); } }
+@keyframes drift-b { to { transform: translate3d(-24vmax, 10vmax, 0) scale(0.9); } }
+@keyframes drift-c { to { transform: translate3d(16vmax, -12vmax, 0) scale(1.1); } }
+@media (max-width: 860px) {
+  .backdrop i:nth-child(3) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop i { animation: none; }
+}
+@media print {
+  .backdrop { display: none; }
+}

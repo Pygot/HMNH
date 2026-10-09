@@ -1,0 +1,51 @@
+{# src/agent/web/templates/api.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import icon, code %}
+{% block title %}API | HMNH{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>API</h1>
+    <p class="meta">For developers. Use the agent from your own code with a bearer token. Hide this page again in Settings.</p>
+  </div>
+</header>
+<div class="scroll">
+  <section id="access" class="block">
+    <header class="block__head"><h2>Access</h2></header>
+    <p>Create a personal API key under <a class="textlink" href="/account#keys">Account</a>. A key can do at most what you can do, and it can be limited to fewer permissions. Send it in the Authorization header.</p>
+    {% if api_enabled %}<p>The shared token from WEB_API_TOKEN also works. It has the permissions of the {{ 'service' }} role.</p>{% endif %}
+    {{ code("Authorization: Bearer YOUR_API_KEY") }}
+    <p class="hint">Requests are sent as application/json. Only the endpoints your role may use are listed here and in the OpenAPI document. Searches started with a key appear in the shared workspace; searches started with the shared token stay private to it.</p>
+  </section>
+
+  <section id="endpoints" class="block">
+    <header class="block__head"><h2>Endpoints</h2></header>
+    {% for tag, items in groups.items() %}
+    <h3 class="group-title">{{ tag }}</h3>
+    <ul>
+      {% for endpoint in items %}
+      <li class="endpoint">
+        <span class="method">{{ endpoint.method }}</span>
+        <div><code>{{ endpoint.path }}</code><p class="muted small">{{ endpoint.summary }} <span class="kind">{{ endpoint.permission }}</span></p></div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">Your role has no API access.</p>
+    {% endfor %}
+  </section>
+
+  <section id="examples" class="block">
+    <header class="block__head"><h2>Examples</h2></header>
+    <h3 class="group-title">Start a research run</h3>
+    {{ code('curl -X POST ' ~ base_url ~ '/api/v1/research \\\n  -H "Authorization: Bearer $API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"goal": "hiring", "name": "Jan Novak", "city": "Brno",\n       "employers": ["Acme"], "lawful_purpose": true,\n       "options": {"networks": ["linkedin", "web"], "strictness": "balanced"}}\'') }}
+    <h3 class="group-title">Read the result</h3>
+    {{ code('curl ' ~ base_url ~ '/api/v1/jobs/JOB_ID \\\n  -H "Authorization: Bearer $API_KEY"') }}
+    <h3 class="group-title">Answer a clarification</h3>
+    {{ code('curl -X POST ' ~ base_url ~ '/api/v1/jobs/JOB_ID/answers \\\n  -H "Authorization: Bearer $API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"answers": [{"network": "linkedin", "chosen_url": "https://www.linkedin.com/in/example"}]}\'') }}
+    <h3 class="group-title">Hear a report</h3>
+    {{ code('curl ' ~ base_url ~ '/api/v1/jobs/JOB_ID/speech \\\n  -H "Authorization: Bearer $API_KEY" -o report.mp3') }}
+    <p class="hint">The full schema is available as OpenAPI at <code>/api/v1/openapi.json</code>.</p>
+  </section>
+</div>
+{% endblock %}

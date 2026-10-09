@@ -1,0 +1,44 @@
+{# src/agent/web/templates/admin_audit.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import icon, field %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}Audit log | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Audit log</h1>
+    <p class="meta">Who did what, when and from where. Secrets are never written to it.</p>
+  </div>
+  {% if can_export %}<div class="pagehead__tools"><a class="btn btn--small" href="/admin/audit.csv?action={{ filters.action|urlencode }}&amp;actor={{ filters.actor|urlencode }}&amp;outcome={{ filters.outcome|urlencode }}">{{ icon('download') }}Download CSV</a></div>{% endif %}
+</header>
+{{ admin_nav(section, can) }}
+<div class="wide">
+  <form class="toolbar" method="get" action="/admin/audit" novalidate>
+    {{ field('action', 'Action starts with', filters.action, 'login', 40) }}
+    {{ field('actor', 'Person', filters.actor, 'eva', 80) }}
+    {{ field('outcome', 'Outcome', filters.outcome, 'denied', 20) }}
+    <button class="btn btn--small" type="submit">Filter</button>
+  </form>
+  <div class="tablewrap">
+    <table class="table">
+      <thead><tr><th scope="col">Time</th><th scope="col">Person</th><th scope="col">Action</th><th scope="col">Target</th><th scope="col">Outcome</th><th scope="col">Address</th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td class="num">{{ entry.ts|stamp }}</td>
+          <td>{{ entry.actor }}</td>
+          <td>{{ entry.action }}</td>
+          <td>{{ entry.target }}</td>
+          <td><span class="kind">{{ entry.outcome }}</span></td>
+          <td class="num">{{ entry.ip }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted">Nothing matches.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if next_before %}<p><a class="btn btn--small" href="/admin/audit?action={{ filters.action|urlencode }}&amp;actor={{ filters.actor|urlencode }}&amp;outcome={{ filters.outcome|urlencode }}&amp;before={{ next_before }}">Older entries{{ icon('arrow') }}</a></p>{% endif %}
+</div>
+{% endblock %}

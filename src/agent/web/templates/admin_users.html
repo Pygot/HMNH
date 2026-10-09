@@ -1,0 +1,60 @@
+{# src/agent/web/templates/admin_users.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, field, select, notes_box, switch %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}Accounts | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>People and access</h1>
+    <p class="meta">{{ users|length }} {{ 'account' if users|length == 1 else 'accounts' }}</p>
+  </div>
+</header>
+{{ admin_nav(section, can) }}
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+
+<div class="wide">
+  <form class="toolbar" method="get" action="/admin/users" novalidate>
+    <label class="find find--wide">{{ icon('search') }}<input type="text" name="q" value="{{ needle }}" placeholder="Search accounts" autocomplete="off" aria-label="Search accounts"></label>
+    <button class="btn btn--small" type="submit">Search</button>
+  </form>
+
+  <div class="tablewrap">
+    <table class="table">
+      <thead><tr><th scope="col">Account</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Two step</th><th scope="col">Last sign in</th></tr></thead>
+      <tbody>
+        {% for item in users %}
+        <tr>
+          <td><a class="textlink" href="/admin/users/{{ item.id }}">{{ item.label }}</a><br><small class="muted">{{ item.username }}{% if item.email %}, {{ item.email }}{% endif %}</small></td>
+          <td>{{ item.role_name }}</td>
+          <td><span class="kind">{{ item.status }}</span></td>
+          <td>{{ 'on' if item.totp_enabled else 'off' }}</td>
+          <td>{{ item.last_login|stamp if item.last_login else 'never' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">No account matches.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if 'users.manage' in can %}
+  <section class="section" id="invite">
+    <h2>Add someone</h2>
+    <form class="stack" method="post" action="/admin/users" novalidate>
+      {{ csrf(csrf_token) }}
+      <div class="grid2">
+        {{ field('username', 'Username', values.get('username', ''), 'eva', 64) }}
+        {{ field('display_name', 'Name (optional)', values.get('display_name', ''), 'Eva Svobodova', 80) }}
+      </div>
+      {{ field('email', 'Email (optional)', values.get('email', ''), 'eva@example.com', 254) }}
+      <div class="field"><span class="field__label">Role</span>{{ select('role', role_options, values.get('role', role_options[0][0] if role_options else '')) }}</div>
+      {% if can_mail %}{{ switch('send', 'Send the invitation by email', true, 'Needs an email address.') }}{% endif %}
+      <div><button class="btn btn--primary" type="submit">{{ icon('plus') }}Create and get the link</button></div>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

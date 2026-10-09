@@ -1,0 +1,35 @@
+{# src/agent/web/templates/setup.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, field %}
+{% block title %}Set up | HMNH{% endblock %}
+{% block body_class %}is-landing{% endblock %}
+{% block main_class %}centered{% endblock %}
+{% block content %}
+<section class="gate gate--form">
+  {{ logo('logo logo--gate') }}
+  <h1>Set up your workspace</h1>
+  {% if valid %}
+  <p class="muted">Create the first account. It becomes the administrator. You can add people and choose their roles afterwards.</p>
+  <form class="stack" method="post" action="/setup" autocomplete="off" novalidate>
+    {{ csrf(csrf_token) }}
+    <input type="hidden" name="code" value="{{ code }}">
+    {{ errors_box(errors) }}
+    {{ field('username', 'Username', values.get('username', ''), 'eva', 64) }}
+    {{ field('display_name', 'Your name (optional)', values.get('display_name', ''), 'Eva Svobodova', 80) }}
+    {{ field('email', 'Email (optional)', values.get('email', ''), 'eva@example.com', 254) }}
+    <label class="field">
+      <span class="field__label">Password</span>
+      <input class="input" type="password" name="password" autocomplete="new-password">
+    </label>
+    <label class="field">
+      <span class="field__label">Repeat the password</span>
+      <input class="input" type="password" name="confirm" autocomplete="new-password">
+    </label>
+    <button class="btn btn--primary btn--block" type="submit">Create the account{{ icon('arrow') }}</button>
+  </form>
+  {% else %}
+  <p class="muted">The setup code was not accepted. Use the link printed in the terminal where you started the server.</p>
+  <p><a class="btn btn--primary" href="/">Back</a></p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,65 @@
+# pyproject.toml
+[project]
+name = "hmnh"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "cryptography>=50.0.2",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "pydantic>=2.14.0",
+    "pydantic-settings>=2.15.0",
+    "pypdf>=6.19.0",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.2.4",
+    "python-multipart>=0.0.32",
+    "segno>=1.6.6",
+    "starlette>=1.7.0",
+    "typer>=0.27.3",
+    "uvicorn>=0.54.0",
+]
+
+[project.scripts]
+agent = "agent.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.9.27,<0.10"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "agent"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.13.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "UP", "B", "SIM", "C4", "PTH", "ASYNC", "S", "ARG", "RUF", "ERA", "T20"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S107", "S108", "ARG001", "ARG002", "ARG005"]
+"src/agent/candidates.py" = ["S608"]
+"src/agent/finance.py" = ["S608"]
+"src/agent/messaging.py" = ["S608"]
+"src/agent/web/icons.py" = ["S704"]
+"src/agent/web/logo.py" = ["S704"]
+"tests/test_frontend.py" = ["S314"]
+"tests/test_buddy.py" = ["S314"]
+"tests/test_stats.py" = ["S314"]
+"tests/test_api_v2.py" = ["S314"]
+"tests/import_rules.py" = ["ERA001"]
+"tests/test_import_rules.py" = ["ERA001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = ["error"]

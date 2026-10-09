@@ -1,0 +1,67 @@
+{# src/agent/web/templates/mail_log.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, field %}
+{% block title %}Sent mail | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Sent mail</h1>
+    <p class="meta"><a class="textlink textlink--back" href="/emails">Templates and drafts</a>{% if 'emails.send' in can and sending and ready %} <a class="textlink" href="/emails/compose">{{ icon('mail') }}Write a message</a>{% endif %}</p>
+  </div>
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="wide">
+  {% if not sending or not ready %}
+  <div class="note" role="status">{{ icon('warn') }}<div>Sending is off. {% if not ready %}Email is not connected under Connections.{% else %}An administrator can switch it on under Security.{% endif %}</div></div>
+  {% endif %}
+  <div class="tablewrap">
+    <table class="table">
+      <thead><tr><th scope="col">Time</th><th scope="col">To</th><th scope="col">Subject</th><th scope="col">Kind</th><th scope="col">Sent by</th><th scope="col">Result</th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td class="num">{{ entry.ts|stamp }}</td>
+          <td>{{ entry.to_address }}</td>
+          <td>{{ entry.subject }}</td>
+          <td>{{ entry.kind }}</td>
+          <td>{{ entry.actor or 'the system' }}</td>
+          <td><span class="kind">{{ entry.status }}</span>{% if entry.error %}<br><small class="muted">{{ entry.error }}</small>{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted">Nothing was sent yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if next_before %}<p><a class="btn btn--small" href="/emails/log?before={{ next_before }}">Older entries{{ icon('arrow') }}</a></p>{% endif %}
+
+  <section class="section" id="blocked">
+    <h2>Do not contact</h2>
+    <p class="hint">Messages to these addresses are never sent. Add anyone who asks you to stop.</p>
+    <ul class="memory">
+      {% for item in suppressions %}
+      <li>
+        <span>{{ item.address }} <small>{{ item.reason }}{% if item.added_by %}, {{ item.added_by }}{% endif %}, {{ item.created|stamp }}</small></span>
+        {% if 'emails.send' in can %}
+        <form method="post" action="/emails/suppress/remove">{{ csrf(csrf_token) }}<input type="hidden" name="address" value="{{ item.address }}"><button class="ibtn" type="submit" aria-label="Allow {{ item.address }} again">{{ icon('close') }}</button></form>
+        {% endif %}
+      </li>
+      {% else %}
+      <li class="muted">Nobody is on the list.</li>
+      {% endfor %}
+    </ul>
+    {% if 'emails.send' in can %}
+    <form class="stack" method="post" action="/emails/suppress" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      <div class="grid2">
+        {{ field('address', 'Address', '', 'name@example.com', 254) }}
+        {{ field('reason', 'Why (optional)', '', 'Asked to stop', 200) }}
+      </div>
+      <div><button class="btn btn--small" type="submit">{{ icon('plus') }}Add</button></div>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

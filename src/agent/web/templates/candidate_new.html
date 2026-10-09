@@ -1,0 +1,37 @@
+{# src/agent/web/templates/candidate_new.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, field, select %}
+{% block title %}Add a candidate | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Add a candidate</h1>
+    <p class="meta"><a class="textlink textlink--back" href="/candidates">All candidates</a></p>
+  </div>
+</header>
+{{ errors_box(errors) }}
+<div class="narrow">
+  <form class="section stack" method="post" action="/candidates" autocomplete="off" novalidate>
+    {{ csrf(csrf_token) }}
+    {{ field('name', 'Name', values.get('name', ''), 'Eva Svobodova', 120) }}
+    <div class="grid2">
+      {{ field('headline', 'Role or headline', values.get('headline', ''), 'Data engineer', 200) }}
+      {{ field('employer', 'Employer', values.get('employer', ''), 'Acme', 200) }}
+    </div>
+    <div class="grid2">
+      {{ field('location', 'Location', values.get('location', ''), 'Brno', 200) }}
+      <div class="field"><span class="field__label">Status</span>{{ select('status', statuses, values.get('status', statuses[0][0])) }}</div>
+    </div>
+    {{ field('skills', 'Skills, separated by commas', values.get('skills', ''), 'python, sql', 600) }}
+    {{ field('tags', 'Tags, separated by commas', values.get('tags', ''), 'referral, brno', 200) }}
+    {{ field('link', 'A public profile link (optional)', values.get('link', ''), 'https://www.linkedin.com/in/eva', 600) }}
+    <label class="field">
+      <span class="field__label">Notes</span>
+      <textarea class="input input--area" name="notes" rows="4" maxlength="4000">{{ values.get('notes', '') }}</textarea>
+    </label>
+    <p class="hint">Keep to what is relevant for hiring. Do not record health, beliefs, family or other sensitive details.</p>
+    <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Add the candidate</button></div>
+  </form>
+</div>
+{% endblock %}

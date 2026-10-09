@@ -1,0 +1,33 @@
+{
+  "actorSpecification": 1,
+  "name": "hmnh-person-research",
+  "title": "HMNH: person research for hiring",
+  "description": "Researches a person from public professional sources, checks every claim against more than one source and returns a rated, sourced report.",
+  "version": "0.1",
+  "buildTag": "latest",
+  "dockerfile": "./Dockerfile",
+  "readme": "./README.md",
+  "input": "./input_schema.json",
+  "storages": {
+    "dataset": {
+      "actorSpecification": 1,
+      "title": "Research result",
+      "views": {
+        "overview": {
+          "title": "Result",
+          "transformation": {
+            "fields": ["mode", "status", "result"]
+          },
+          "display": {
+            "component": "table",
+            "properties": {
+              "mode": {"label": "Mode", "format": "text"},
+              "status": {"label": "Status", "format": "text"},
+              "result": {"label": "Report", "format": "object"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

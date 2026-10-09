@@ -1,0 +1,33 @@
+{# src/agent/web/templates/link.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box %}
+{% block title %}{{ title }} | HMNH{% endblock %}
+{% block body_class %}is-landing{% endblock %}
+{% block main_class %}centered{% endblock %}
+{% block content %}
+<section class="gate gate--form">
+  {{ logo('logo logo--gate') }}
+  <h1>{{ title }}</h1>
+  {% if valid %}
+  <p class="muted">Account: <strong>{{ target.username }}</strong></p>
+  <form class="stack" method="post" action="{{ post_to }}" autocomplete="off" novalidate>
+    {{ csrf(csrf_token) }}
+    {{ errors_box(errors) }}
+    {% if password %}
+    <label class="field">
+      <span class="field__label">Password</span>
+      <input class="input" type="password" name="password" autocomplete="new-password" autofocus>
+    </label>
+    <label class="field">
+      <span class="field__label">Repeat the password</span>
+      <input class="input" type="password" name="confirm" autocomplete="new-password">
+    </label>
+    {% endif %}
+    <button class="btn btn--primary btn--block" type="submit">{{ action }}{{ icon('arrow') }}</button>
+  </form>
+  {% else %}
+  {{ errors_box(errors) }}
+  <p><a class="btn btn--primary" href="/">Back to sign in</a></p>
+  {% endif %}
+</section>
+{% endblock %}

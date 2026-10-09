@@ -1,0 +1,35 @@
+{# src/agent/web/templates/verify.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box %}
+{% block title %}Confirm it is you | HMNH{% endblock %}
+{% block body_class %}is-landing{% endblock %}
+{% block main_class %}centered{% endblock %}
+{% block content %}
+<section class="gate gate--form">
+  {{ logo('logo logo--gate') }}
+  <h1>Confirm it is you</h1>
+  {% if pending == 'email' %}
+  <p class="muted">We sent a code to the email address of your account. It works once.</p>
+  {% else %}
+  <p class="muted">Open your authenticator app and enter the current code, or one of your recovery codes.</p>
+  {% endif %}
+  <form class="stack" method="post" action="/login/verify" autocomplete="off" novalidate>
+    {{ csrf(csrf_token) }}
+    {{ errors_box(errors) }}
+    {% for note in notes|default([]) %}<div class="note note--ok" role="status">{{ icon('check') }}<div>{{ note }}</div></div>{% endfor %}
+    <label class="field">
+      <span class="field__label">Code</span>
+      <input class="input input--code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" autofocus>
+    </label>
+    <button class="btn btn--primary btn--block" type="submit">Continue{{ icon('arrow') }}</button>
+  </form>
+  {% if pending == 'email' %}
+  <form method="post" action="/login/verify" novalidate>
+    {{ csrf(csrf_token) }}
+    <input type="hidden" name="resend" value="yes">
+    <button class="textlink" type="submit">Send a new code</button>
+  </form>
+  {% endif %}
+  <p><a class="textlink" href="/">Back to sign in</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,59 @@
+/* src/agent/web/static/pages.css */
+.narrow, .wide { display: grid; align-content: start; gap: var(--gap); min-width: 0; }
+.narrow { max-width: 46rem; }
+.wide { max-width: 78rem; }
+.section { display: grid; gap: 12px; padding: var(--pad); border: 1px solid var(--line); border-radius: var(--r3); background: var(--panel); }
+.section h2 { font-size: 1.05rem; }
+.section.more { display: block; padding-block: 4px; }
+.section.more[open] { padding-block: var(--pad); }
+.section.more > :not(summary) { margin-top: 12px; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
+.toolbar .field { min-width: 10rem; }
+.find--wide { flex: 1; min-width: 12rem; border: 1px solid var(--line); background: var(--panel); color: var(--muted); }
+.find--wide:hover, .find--wide:focus-within { background: var(--panel); color: var(--ink); }
+.find--wide input { color: var(--ink); }
+.find--wide input::placeholder { color: var(--muted); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r2); background: var(--panel); }
+.table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.table th { padding: 9px 12px; border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 600; text-align: left; white-space: nowrap; }
+.table td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table tr:last-child td { border-bottom: 0; }
+.table td small { font-size: 0.82rem; }
+.subtabs { display: flex; gap: 2px; margin-bottom: var(--gap); overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.subtabs .tab { text-decoration: none; }
+@media (max-width: 640px) { .subtabs { flex-wrap: wrap; overflow-x: visible; } .subtabs .tab { padding-inline: 0.55rem; } }
+.subtabs .tab[aria-current="page"] { border-bottom-color: var(--ink); color: var(--ink); }
+.matrix { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 8px 16px; }
+.qrbox { width: 12rem; padding: 10px; border-radius: var(--r2); background: #ffffff; }
+.qr { display: block; width: 100%; height: auto; }
+.input--code { font-family: var(--mono); letter-spacing: 0.18em; }
+.secretkey { font-size: 1rem; word-break: break-all; }
+.codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 6px; list-style: none; }
+.codes li { padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--soft); }
+.hire { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.hire header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.timeline { display: grid; gap: 2px; list-style: none; }
+.timeline li { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.pager { display: flex; align-items: center; gap: 12px; }
+.field--short { width: 8rem; }
+.footer { color: var(--muted); font-size: 0.86rem; }
+.plotbox { display: grid; gap: 8px; margin: 0; }
+.plot { display: block; width: 100%; height: auto; overflow: visible; }
+.plot__grid { stroke: var(--line); stroke-width: 1; }
+.plot__text { fill: var(--muted); font-family: var(--mono); font-size: 11px; }
+.plot__bar { shape-rendering: geometricPrecision; }
+.plot__bar--0 { fill: var(--ink); }
+.plot__bar--1 { fill: var(--faint); }
+.plot__bar--2 { fill: var(--tint); stroke: var(--faint); stroke-width: 1; }
+.plot__bar--3 { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+.plot__line { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+.plot__line--0 { stroke: var(--ink); }
+.plot__line--1 { stroke: var(--faint); stroke-dasharray: 6 4; }
+.plot__line--2 { stroke: var(--muted); stroke-dasharray: 2 4; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; font-size: 0.84rem; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px; }
+.swatch--0 { background: var(--ink); }
+.swatch--1 { background: var(--faint); }
+.swatch--2 { border: 1px solid var(--faint); background: var(--tint); }
+.swatch--3 { border: 1.5px solid var(--ink); background: var(--panel); }

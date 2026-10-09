@@ -1,0 +1,157 @@
+{
+  "title": "HMNH person research",
+  "type": "object",
+  "schemaVersion": 1,
+  "description": "Describe the person, or a skill and a place. Only public professional sources are read.",
+  "properties": {
+    "mode": {
+      "title": "Mode",
+      "type": "string",
+      "description": "Research one person, or find people who have a skill in a place.",
+      "editor": "select",
+      "enum": ["person", "skill_search"],
+      "enumTitles": ["Research one person", "Find people by skill and place"],
+      "default": "person"
+    },
+    "purposeConfirmed": {
+      "title": "I confirm a legitimate purpose",
+      "type": "boolean",
+      "description": "Required. Tick this only if you have a lawful, professional reason to research this person, such as hiring.",
+      "default": false
+    },
+    "goal": {
+      "title": "Goal",
+      "type": "string",
+      "description": "What the research is for. It changes what is looked for and how the rating is worded.",
+      "editor": "select",
+      "enum": ["hiring", "sales", "due_diligence"],
+      "enumTitles": ["Hiring", "Sales", "Due diligence"],
+      "default": "hiring"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "description": "Full name of the person (person mode).",
+      "editor": "textfield"
+    },
+    "aliases": {
+      "title": "Other names",
+      "type": "array",
+      "description": "Other spellings or former names.",
+      "editor": "stringList"
+    },
+    "location": {
+      "title": "Location",
+      "type": "string",
+      "description": "City or region of the person (person mode), or the place to search in (skill search mode).",
+      "editor": "textfield"
+    },
+    "employers": {
+      "title": "Employers",
+      "type": "array",
+      "description": "Companies the person is known to have worked for.",
+      "editor": "stringList"
+    },
+    "roles": {
+      "title": "Roles",
+      "type": "array",
+      "description": "Job titles the person is known to have held.",
+      "editor": "stringList"
+    },
+    "skills": {
+      "title": "Skills",
+      "type": "array",
+      "description": "Skills that help to tell the right person from namesakes.",
+      "editor": "stringList"
+    },
+    "links": {
+      "title": "Known profile links",
+      "type": "array",
+      "description": "Profile or website addresses of the person. Known profiles skip the guessing step.",
+      "editor": "stringList"
+    },
+    "focus": {
+      "title": "Focus",
+      "type": "string",
+      "description": "Optional topic to look at more closely.",
+      "editor": "textfield"
+    },
+    "requirements": {
+      "title": "Requirements",
+      "type": "array",
+      "description": "Optional list of requirements to rate the person against, for example [{\"kind\": \"skill\", \"label\": \"Python\", \"priority\": \"must\"}]. Kinds: language, skill, experience, education, certification, location.",
+      "editor": "json"
+    },
+    "networks": {
+      "title": "Sources",
+      "type": "array",
+      "description": "Which sources to read. Leave empty for all of them.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": ["linkedin", "facebook", "instagram", "web"],
+        "enumTitles": ["LinkedIn", "Facebook", "Instagram", "Public web"]
+      }
+    },
+    "strictness": {
+      "title": "Match strictness",
+      "type": "string",
+      "description": "How closely a profile must match before it is accepted as the same person.",
+      "editor": "select",
+      "enum": ["lenient", "balanced", "strict"],
+      "enumTitles": ["Lenient", "Balanced", "Strict"]
+    },
+    "scepticism": {
+      "title": "Scepticism",
+      "type": "string",
+      "description": "How much distrust is applied when rating.",
+      "editor": "select",
+      "enum": ["standard", "strict"],
+      "enumTitles": ["Standard", "Strict"],
+      "default": "standard"
+    },
+    "maxWebPages": {
+      "title": "Public web pages to read",
+      "type": "integer",
+      "description": "Upper limit of ordinary web pages read per person.",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "skill": {
+      "title": "Skill",
+      "type": "string",
+      "description": "The skill to look for (skill search mode).",
+      "editor": "textfield"
+    },
+    "limit": {
+      "title": "Number of candidates",
+      "type": "integer",
+      "description": "How many candidates to return in skill search mode.",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 5
+    },
+    "llmProvider": {
+      "title": "Language model provider",
+      "type": "string",
+      "description": "Leave empty to use the AI models of your Apify account. Pick another provider to use your own key.",
+      "editor": "select",
+      "enum": ["anthropic", "openai"],
+      "enumTitles": ["Anthropic", "OpenAI"]
+    },
+    "llmApiKey": {
+      "title": "Language model API key",
+      "type": "string",
+      "description": "Only needed when a provider is picked above. The key is stored as a secret.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "llmModel": {
+      "title": "Language model name",
+      "type": "string",
+      "description": "Optional. A sensible default is used.",
+      "editor": "textfield"
+    }
+  },
+  "required": ["mode", "purposeConfirmed"]
+}

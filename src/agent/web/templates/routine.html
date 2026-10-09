@@ -1,0 +1,94 @@
+{# src/agent/web/templates/routine.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, field, select, switch %}
+{% block title %}{{ routine.name }} | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>{{ routine.name }}</h1>
+    <p class="meta"><a class="textlink textlink--back" href="/routines">All routines</a></p>
+  </div>
+  {% if 'routines.manage' in can %}
+  <div class="pagehead__tools">
+    {% if routine.status == 'active' %}
+    <form method="post" action="/routines/{{ routine.id }}/run">{{ csrf(csrf_token) }}<button class="textlink" type="submit">{{ icon('arrow') }}Run now</button></form>
+    <form method="post" action="/routines/{{ routine.id }}/pause">{{ csrf(csrf_token) }}<button class="textlink" type="submit">{{ icon('stop') }}Pause</button></form>
+    {% else %}
+    <form method="post" action="/routines/{{ routine.id }}/resume">{{ csrf(csrf_token) }}<button class="textlink" type="submit">{{ icon('clock') }}{{ 'Resume' if routine.status == 'paused' else 'Start again' }}</button></form>
+    {% endif %}
+    <details class="confirm">
+      <summary class="textlink">{{ icon('trash') }}Delete</summary>
+      <form method="post" action="/routines/{{ routine.id }}/delete">
+        {{ csrf(csrf_token) }}
+        <p>Remove this routine and its history?</p>
+        <button class="btn btn--small btn--primary" type="submit">Delete the routine</button>
+      </form>
+    </details>
+  </div>
+  {% endif %}
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="wide">
+  <section class="section">
+    <h2>Where it stands</h2>
+    <dl class="facts">
+      <div><dt>Status</dt><dd><span class="kind">{{ routine.status }}</span></dd></div>
+      <div><dt>Looking for</dt><dd>{{ routine.skill }} in {{ routine.location }}</dd></div>
+      <div><dt>Perfect means</dt><dd>{{ routine.need_count }} {{ 'candidate' if routine.need_count == 1 else 'candidates' }} rated {{ '%.1f'|format(routine.min_rating) }} or more{% if routine.need_musts and routine.requirements %}, every must-have requirement met{% endif %}</dd></div>
+      <div><dt>Repeats</dt><dd>{{ every }}, up to {{ routine.max_runs }} runs, {{ routine.runs }} done</dd></div>
+      <div><dt>Best rating so far</dt><dd class="num">{% if routine.best_rating is not none %}{{ '%.1f'|format(routine.best_rating) }} / 5{% else %}none yet{% endif %}</dd></div>
+      <div><dt>Next run</dt><dd>{% if routine.next_run %}{{ routine.next_run|stamp }}{% else %}-{% endif %}</dd></div>
+      <div><dt>Latest result</dt><dd>{{ routine.last_result or 'Not run yet' }}</dd></div>
+    </dl>
+    {% if routine.requirements %}
+    <p class="hint">Requirements: {% for item in routine.requirements %}{{ item.description }}{{ ', ' if not loop.last }}{% endfor %}.</p>
+    {% endif %}
+  </section>
+
+  <section class="section">
+    <h2>History</h2>
+    <div class="tablewrap">
+      <table class="table">
+        <thead><tr><th scope="col">Started</th><th scope="col">Result</th><th scope="col">Best</th><th scope="col">Matches</th><th scope="col">Report</th></tr></thead>
+        <tbody>
+          {% for run in runs %}
+          <tr>
+            <td class="num">{{ run.ts|stamp }}</td>
+            <td><span class="kind">{{ run.state }}</span> <small class="muted">{{ run.summary }}</small></td>
+            <td class="num">{% if run.best_rating is not none %}{{ '%.1f'|format(run.best_rating) }}{% else %}-{% endif %}</td>
+            <td class="num">{{ run.matches }}</td>
+            <td>{% if run.job_id and 'reports.view' in can %}<a class="textlink" href="/jobs/{{ run.job_id }}">Open</a>{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="muted">No run yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% if 'routines.manage' in can %}
+  <section class="section">
+    <h2>Change</h2>
+    <form class="stack" method="post" action="/routines/{{ routine.id }}" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      {{ field('name', 'Name', routine.name, 'Rust developers in Brno', 80) }}
+      <div class="grid3">
+        {{ field('min_rating', 'Perfect means at least', routine.min_rating, '4.0', 4) }}
+        {{ field('need_count', 'Matches needed', routine.need_count, '1', 2) }}
+        {{ field('max_runs', 'Stop after this many runs', routine.max_runs, '14', 4) }}
+      </div>
+      <div class="grid2">
+        <div class="field"><span class="field__label">Repeat</span>{{ select('interval', intervals, routine.interval_hours|string) }}</div>
+        {{ field('notify', 'Also email', routine.notify_emails|join(', '), 'team@example.com', 600) }}
+      </div>
+      {{ switch('musts', 'Every must-have requirement must be met', routine.need_musts) }}
+      {% if not mail_ready %}<p class="hint">Email is not connected, so notices appear here only.</p>{% endif %}
+      <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Save</button></div>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

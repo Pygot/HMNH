@@ -1,0 +1,193 @@
+{# src/agent/web/templates/settings.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, segmented, toggles, switch, number, errors_box, field %}
+{% block title %}Settings | HMNH{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Settings</h1>
+    <p class="meta">Display choices stay in this browser. Chats, reports and your hiring context stay on this machine.</p>
+  </div>
+</header>
+{% if saved %}<div class="note note--ok" role="status">{{ icon('check') }}<div>Saved.</div></div>{% endif %}
+{{ errors_box(errors) }}
+
+<div class="tabs tabs--side" data-tabs>
+  <div class="tabs__list" role="tablist" aria-orientation="vertical" aria-label="Settings sections">
+    <button type="button" class="tab" role="tab" data-tab="appearance">Appearance</button>
+    <button type="button" class="tab" role="tab" data-tab="research">Research</button>
+    <button type="button" class="tab" role="tab" data-tab="context">Hiring context</button>
+    <button type="button" class="tab" role="tab" data-tab="matching">Matching</button>
+    <button type="button" class="tab" role="tab" data-tab="tie">Tie</button>
+    <button type="button" class="tab" role="tab" data-tab="data">Your data</button>
+    <button type="button" class="tab" role="tab" data-tab="developer">Developer</button>
+    <button type="button" class="tab" role="tab" data-tab="account">Account</button>
+  </div>
+
+  <form id="settings-form" class="settings" method="post" action="/settings" novalidate>
+    {{ csrf(csrf_token) }}
+    <div class="tabs__panels">
+      <section class="tabpanel" role="tabpanel" data-panel="appearance" aria-label="Appearance">
+        <h2>Appearance</h2>
+        <fieldset class="group">
+          <legend>Theme</legend>
+          {{ segmented('theme', themes, prefs.theme.value) }}
+          <p class="hint">System follows your device.</p>
+        </fieldset>
+        <fieldset class="group">
+          <legend>Density</legend>
+          {{ segmented('density', densities, prefs.density.value) }}
+        </fieldset>
+        {{ switch('backdrop', 'Animated background', prefs.backdrop, 'A slow, quiet drift of light and shade behind the pages. It pauses when the tab is hidden and stays still if your device asks for less motion.') }}
+      </section>
+
+      <section class="tabpanel" role="tabpanel" data-panel="research" aria-label="Research">
+        <h2>Research defaults</h2>
+        <p class="hint">Used when you do not say otherwise in the chat.</p>
+        <fieldset class="group"><legend>Goal</legend>{{ segmented('goal', goals, prefs.goal.value) }}</fieldset>
+        <fieldset class="group"><legend>Sources</legend>{{ toggles('source', networks, prefs.networks|map(attribute='value')|list) }}</fieldset>
+        {{ number('skill_limit', 'Candidates in a skill search', prefs.skill_limit, 1, 10, 1) }}
+        <fieldset class="group">
+          <legend>While a search runs</legend>
+          <div class="seg" role="radiogroup">
+            <label class="seg__item"><input type="radio" name="live_view" value="chat"{% if prefs.live_view.value == 'chat' %} checked{% endif %}><span>Log</span></label>
+            <label class="seg__item"><input type="radio" name="live_view" value="graph"{% if prefs.live_view.value == 'graph' %} checked{% endif %}><span>Graph</span></label>
+          </div>
+          <p class="hint">The log narrates every step. The graph draws sources, findings and requirements as they appear.</p>
+        </fieldset>
+      </section>
+
+      <section class="tabpanel" role="tabpanel" data-panel="context" aria-label="Hiring context">
+        <h2>Hiring context</h2>
+        <p class="hint">Everything here is optional. You can also just tell the chat, for example "we are a fintech startup hiring Python engineers", and it is remembered for the next searches.</p>
+        {% if 'context.edit' in can %}
+        <div class="grid2">
+          {{ field('company_name', 'Your company', profile.company_name or '', 'Acme', 120) }}
+          {{ field('company_website', 'Company website', profile.company_website or '', 'https://acme.example', 200) }}
+        </div>
+        {{ field('company_description', 'What you do, in one sentence', profile.company_description or '', 'We build payment software for shops', 300) }}
+        {{ field('sender_name', 'Your name in email drafts', profile.sender_name or '', 'Eva Svobodova', 120) }}
+        {% else %}
+        <p class="hint">Only people who may edit the hiring context can change the company details.</p>
+        {% endif %}
+        <p class="hint">The agent reads your public company pages (robots.txt respected) to learn what you build and rates candidates in that context.</p>
+        <h3 class="group-title">Standing requirements</h3>
+        {% if profile.requirements %}
+        <ul class="memory">
+          {% for item in profile.requirements %}
+          <li>
+            <span><strong>{{ item.description }}</strong> <small>{{ item.kind.value }}, {{ 'must have' if item.priority.value == 'must' else 'nice to have' }}</small></span>
+            <button type="submit" class="ibtn" form="requirement-remove" name="index" value="{{ loop.index0 }}" aria-label="Remove {{ item.description }}">{{ icon('close') }}</button>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">None yet. Tell the chat what every candidate should have, for example "they must speak English at C1".</p>
+        {% endif %}
+      </section>
+
+      <section class="tabpanel" role="tabpanel" data-panel="matching" aria-label="Matching">
+        <h2>Matching and scepticism</h2>
+        <fieldset class="group">
+          <legend>Profile matching</legend>
+          {{ segmented('strictness', strictness_levels, prefs.strictness.value) }}
+          <ul class="plain hint">{% for name, preset in presets.items() %}<li>{{ name|capitalize }}: threshold {{ preset.threshold }}, margin {{ preset.margin }}</li>{% endfor %}</ul>
+        </fieldset>
+        <div class="grid3">
+          {{ number('threshold', 'Threshold override', '' if prefs.threshold is none else prefs.threshold, 0, 1, 0.01, 'Use preset') }}
+          {{ number('margin', 'Margin override', '' if prefs.margin is none else prefs.margin, 0, 1, 0.01, 'Use preset') }}
+          {{ number('max_web_pages', 'Open web pages', '' if prefs.max_web_pages is none else prefs.max_web_pages, 0, 20, 1, 'Server default') }}
+        </div>
+        <p class="hint">A profile needs the threshold score and a lead of at least the margin over the runner up, otherwise you are asked which one is right.</p>
+        <fieldset class="group">
+          <legend>Scepticism</legend>
+          {{ segmented('scepticism', scepticism_modes, prefs.scepticism.value) }}
+          <p class="hint">Scepticism looks for profiles that are too good to be true: a high rating with little corroboration, many overlapping roles, promotional wording, long lists of awards and similar signs. Ratings are capped when a warning is raised. It cannot be switched off.</p>
+        </fieldset>
+      </section>
+
+      <section class="tabpanel" role="tabpanel" data-panel="tie" aria-label="Tie">
+        <h2>{{ buddy.name }}</h2>
+        <p class="hint">{{ buddy.name }} is a small necktie you can talk to. Think out loud with it, plan a search or weigh a candidate. It also keeps a quiet focus timer and taps you when a search needs you. You can always find it at the bottom of the left rail.</p>
+        <fieldset class="group">
+          <legend>Nudges and voice</legend>
+          {{ segmented('buddy', buddy_modes, prefs.buddy.value) }}
+          <p class="hint">Off keeps {{ buddy.name }} quiet, you can still open the conversation. Text shows its nudges. {% if voice_enabled %}Voice also speaks them and its replies.{% else %}Voice needs ELEVENLABS_API_KEY.{% endif %}</p>
+        </fieldset>
+        {% if voice_enabled %}<p class="hint">{{ voice_notice }}</p>{% endif %}
+      </section>
+
+      <section class="tabpanel" role="tabpanel" data-panel="data" data-nosave aria-label="Your data">
+        <h2>Your data</h2>
+        <p>Chats, reports and your hiring context are stored in a database on this machine: <code>{{ store_path }}</code>. Nothing is uploaded. Old chats and reports are removed automatically after {{ retention_days }} days.</p>
+        <dl class="facts">
+          <div><dt>Chats</dt><dd class="num">{{ counts.threads }}</dd></div>
+          <div><dt>Messages</dt><dd class="num">{{ counts.messages }}</dd></div>
+          <div><dt>Reports</dt><dd class="num">{{ counts.jobs }}</dd></div>
+          <div><dt>Remembered context</dt><dd>{% if profile.company_name or profile.sender_name or profile.requirements %}Yes{% else %}Nothing{% endif %}</dd></div>
+        </dl>
+        <p class="hint">Reports describe real people. Delete them when you no longer need them.</p>
+        <div class="dangers">
+          <details class="confirm">
+            <summary class="btn btn--small">Delete chats and reports</summary>
+            <p>All chats, messages, reports and exported files are removed.</p>
+            <button type="submit" class="btn btn--small btn--primary" form="delete-history">Yes, delete them</button>
+          </details>
+          <details class="confirm">
+            <summary class="btn btn--small">Forget my hiring context</summary>
+            <p>Company, sender name and standing requirements are removed.</p>
+            <button type="submit" class="btn btn--small btn--primary" form="delete-memory">Yes, forget it</button>
+          </details>
+          <details class="confirm">
+            <summary class="btn btn--small">Delete everything</summary>
+            <p>Chats, reports, exported files and remembered context.</p>
+            <button type="submit" class="btn btn--small btn--primary" form="delete-all">Yes, delete everything</button>
+          </details>
+        </div>
+      </section>
+
+      <section class="tabpanel" role="tabpanel" data-panel="developer" aria-label="Developer">
+        <h2>Developer</h2>
+        {{ switch('show_api', 'Show the API page', prefs.show_api, 'Adds an API entry to the left rail with endpoints and examples. You do not need it to use the agent.') }}
+        <h3 class="group-title">Connected services</h3>
+        {% if service %}
+        <dl class="facts">
+          <div><dt>Language model</dt><dd>{{ service.llm_provider }}{% if service.llm_model %}, {{ service.llm_model }}{% endif %}</dd></div>
+          <div><dt>Search provider</dt><dd>{{ service.search_provider }}</dd></div>
+          <div><dt>Profiles not readable</dt><dd>{{ service.unavailable_networks|join(', ') or 'none' }}</dd></div>
+          <div><dt>Voice</dt><dd>{% if voice_enabled %}On, ElevenLabs{% else %}Off, an administrator can add a voice key under Connections{% endif %}</dd></div>
+          {% if service.apify_error %}
+          <div><dt>Apify account</dt><dd>{{ service.apify_error }}</dd></div>
+          {% elif service.apify_remaining_usd is not none %}
+          <div><dt>Apify usage this month</dt><dd>{{ '%.2f'|format(service.apify_monthly_usage_usd) }} USD used, {{ '%.2f'|format(service.apify_remaining_usd) }} USD remaining</dd></div>
+          {% endif %}
+        </dl>
+        {% else %}
+        <p class="empty">Status is not available: {{ service_problem }}</p>
+        {% endif %}
+        <p class="hint">Keys and tokens are read from environment variables or your private .env file and are never shown here.</p>
+      </section>
+
+      <section class="tabpanel" role="tabpanel" data-panel="account" data-nosave aria-label="Account">
+        <h2>Account</h2>
+        <p class="hint">Remove the saved display settings from this browser and return to the defaults, or end this session.</p>
+        <div class="dangers">
+          <button type="submit" class="btn btn--small" form="reset-form">Reset display settings</button>
+          <button type="submit" class="btn btn--small" form="logout-form">{{ icon('logout') }}Sign out</button>
+        </div>
+      </section>
+    </div>
+    <div class="savebar">
+      <span class="muted">Changes apply after you save.</span>
+      <button class="btn btn--primary" type="submit">{{ icon('check') }}Save settings</button>
+    </div>
+  </form>
+</div>
+
+<form id="requirement-remove" method="post" action="/settings/requirements/remove" hidden>{{ csrf(csrf_token) }}</form>
+<form id="delete-history" method="post" action="/settings/data/delete" hidden>{{ csrf(csrf_token) }}<input type="hidden" name="what" value="history"></form>
+<form id="delete-memory" method="post" action="/settings/data/delete" hidden>{{ csrf(csrf_token) }}<input type="hidden" name="what" value="memory"></form>
+<form id="delete-all" method="post" action="/settings/data/delete" hidden>{{ csrf(csrf_token) }}<input type="hidden" name="what" value="all"></form>
+<form id="reset-form" method="post" action="/settings/reset" hidden>{{ csrf(csrf_token) }}</form>
+<form id="logout-form" method="post" action="/logout" hidden>{{ csrf(csrf_token) }}</form>
+{% endblock %}

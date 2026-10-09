@@ -1,0 +1,75 @@
+{# src/agent/web/templates/admin_roles.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, field, notes_box %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}Roles | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Roles and permissions</h1>
+    <p class="meta">A role is a named set of permissions. Every page and every API call checks them, and anything a role may not use is hidden.</p>
+  </div>
+</header>
+{{ admin_nav(section, can) }}
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="wide">
+  <div class="tablewrap">
+    <table class="table">
+      <thead><tr><th scope="col">Role</th><th scope="col">Permissions</th><th scope="col">People</th><th scope="col"><span class="sr">Action</span></th></tr></thead>
+      <tbody>
+        {% for role in roles %}
+        <tr>
+          <td><strong>{{ role.name }}</strong>{% if role.builtin %} <span class="kind">built in</span>{% endif %}<br><small class="muted">{{ role.description }}</small></td>
+          <td class="num">{{ role.effective()|length }}</td>
+          <td class="num">{{ sizes.get(role.id, 0) }}</td>
+          <td>
+            <div class="toolbar">
+              <a class="btn btn--small" href="/admin/roles?edit={{ role.id }}#editor">Edit</a>
+              {% if not role.builtin and not sizes.get(role.id, 0) %}
+              <form method="post" action="/admin/roles/{{ role.id }}/delete">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Remove</button></form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <section class="section" id="editor">
+    <h2>{{ 'Edit ' ~ editing.name if editing else 'New role' }}</h2>
+    {% if editing and editing.builtin %}<p class="hint">Built-in roles are reset to their defaults when the server starts, so edit a copy to keep your changes.</p>{% endif %}
+    <form class="stack" method="post" action="/admin/roles" novalidate>
+      {{ csrf(csrf_token) }}
+      <input type="hidden" name="id" value="{{ editing.id if editing else '' }}">
+      <div class="grid2">
+        {{ field('name', 'Name', editing.name if editing else '', 'Recruiter', 40) }}
+        {{ field('description', 'What it is for', editing.description if editing else '', 'Runs searches and reviews candidates', 300) }}
+      </div>
+      {% set chosen = editing.effective() if editing else [] %}
+      {% for group, entries in groups.items() %}
+      <fieldset class="group">
+        <legend>{{ group }}</legend>
+        <div class="matrix">
+          {% for value, label in entries %}
+          {% if value in held %}
+          <label class="switch">
+            <input type="checkbox" name="permission" value="{{ value }}"{% if value in chosen %} checked{% endif %}>
+            <span class="switch__box" aria-hidden="true"></span>
+            <span class="switch__text"><strong>{{ label }}</strong><small class="num">{{ value }}</small></span>
+          </label>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endfor %}
+      <div class="toolbar">
+        <button class="btn btn--primary" type="submit">{{ icon('check') }}Save the role</button>
+        {% if editing %}<a class="btn" href="/admin/roles">Start a new one</a>{% endif %}
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

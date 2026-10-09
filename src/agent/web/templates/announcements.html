@@ -1,0 +1,57 @@
+{# src/agent/web/templates/announcements.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, notes_box, field, select, switch %}
+{% block title %}Announcements | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}"><link rel="stylesheet" href="{{ asset('messages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Announcements</h1>
+    <p class="meta"><a class="textlink textlink--back" href="/messages">Messages</a></p>
+  </div>
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+<div class="narrow">
+  {% for item in items %}
+  <article class="section notice{% if not item.read %} notice--new{% endif %}" id="a-{{ item.id }}">
+    <header class="notice__head">
+      <h2>{{ item.title }}</h2>
+      <span class="muted small">{{ item.author_name }}, {{ item.created|stamp }}, to {{ item.audience_label }}{% if item.expires %}, until {{ item.expires|stamp }}{% endif %}</span>
+    </header>
+    <p class="notice__body">{{ item.body }}</p>
+    <div class="toolbar">
+      {% if not item.read %}
+      <form method="post" action="/announcements/{{ item.id }}/read">{{ csrf(csrf_token) }}<input type="hidden" name="next" value="/announcements"><button class="btn btn--small" type="submit">{{ icon('check') }}Mark as read</button></form>
+      {% endif %}
+      {% if item.pinned %}<span class="kind">pinned</span>{% endif %}
+      {% if item.author_id == me or moderator %}
+      <form method="post" action="/announcements/{{ item.id }}/delete">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">{{ icon('trash') }}Remove</button></form>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p class="empty">No announcements right now.</p>
+  {% endfor %}
+
+  {% if can_post %}
+  <section class="section" id="new">
+    <h2>Post an announcement</h2>
+    <form class="stack" method="post" action="/announcements" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      {{ field('title', 'Title', '', 'Office closed on Friday', settings.announcement_title_chars) }}
+      <label class="field">
+        <span class="field__label">Text</span>
+        <textarea class="input input--area" name="body" rows="5" maxlength="{{ settings.announcement_chars }}"></textarea>
+      </label>
+      <div class="grid2">
+        <div class="field"><span class="field__label">Who gets it</span>{{ select('audience', audiences, 'all') }}</div>
+        <div class="field"><span class="field__label">Stays for</span>{{ select('days', expiry, '0') }}</div>
+      </div>
+      {{ switch('pinned', 'Keep it at the top', false) }}
+      <div><button class="btn btn--primary" type="submit">{{ icon('plus') }}Post it</button></div>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

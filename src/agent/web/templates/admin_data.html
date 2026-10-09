@@ -1,0 +1,38 @@
+{# src/agent/web/templates/admin_data.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% from "_admin.html" import admin_nav %}
+{% block title %}Export | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Export your data</h1>
+    <p class="meta">Take a backup or move to another server. You only see the parts your role may read. Messages are never exported.</p>
+  </div>
+</header>
+{{ admin_nav(section, can) }}
+<div class="narrow">
+  <section class="section">
+    <h2>One file with everything you choose</h2>
+    <form class="stack" method="get" action="/admin/data/export.json" novalidate>
+      <div class="seg seg--multi">
+        {% for item in datasets %}
+        <label class="seg__item"><input type="checkbox" name="datasets" value="{{ item.name }}" checked><span>{{ icon('check') }}{{ item.label }}</span></label>
+        {% endfor %}
+      </div>
+      <div><button class="btn btn--primary" type="submit">{{ icon('download') }}Download as JSON</button></div>
+    </form>
+    <p class="hint">The JSON file can be imported again here, on this or on another server.</p>
+  </section>
+  <section class="section">
+    <h2>One table as a spreadsheet</h2>
+    <ul class="memory">
+      {% for item in datasets %}{% if item.name in csv_columns %}
+      <li><span>{{ item.label }}</span><a class="textlink" href="/admin/data/{{ item.name }}.csv">{{ icon('download') }}CSV</a></li>
+      {% endif %}{% endfor %}
+    </ul>
+    <p class="hint">Cells that start with a formula character get a leading quote so spreadsheets do not run them.</p>
+  </section>
+</div>
+{% endblock %}

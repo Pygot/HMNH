@@ -1,0 +1,209 @@
+{# src/agent/web/templates/candidate.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, errors_box, field, select, notes_box %}
+{% block title %}{{ candidate.name }} | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>{{ candidate.name }}</h1>
+    <p class="meta"><a class="textlink textlink--back" href="/candidates">All candidates</a></p>
+  </div>
+  <div class="pagehead__tools">
+    {% if 'data.export' in can %}<a class="textlink" href="/candidates/{{ candidate.id }}/export">{{ icon('download') }}Export</a>{% endif %}
+    {% if 'data.delete' in can %}
+    <details class="confirm">
+      <summary class="textlink">{{ icon('trash') }}Delete</summary>
+      <form method="post" action="/candidates/{{ candidate.id }}/delete">
+        {{ csrf(csrf_token) }}
+        <p>Remove this person with their contacts, hires and history?</p>
+        <button class="btn btn--small btn--primary" type="submit">Delete the record</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+</header>
+{{ notes_box(notes) }}
+{{ errors_box(errors) }}
+
+<div class="wide">
+  <section class="section">
+    <h2>What you know</h2>
+    <dl class="facts">
+      <div><dt>Status</dt><dd><span class="kind">{{ candidate.status }}</span></dd></div>
+      <div><dt>Latest rating</dt><dd class="num">{% if candidate.rating is not none %}{{ '%.1f'|format(candidate.rating) }} / 5{% else %}not researched{% endif %}</dd></div>
+      <div><dt>Researched</dt><dd>{{ candidate.researched|plural('time') }}</dd></div>
+      <div><dt>Hired before</dt><dd>{% if hires %}Yes, {{ hires|length|plural('time') }}{% for hire in hires if hire.outcome == 'active' %} and works with you now as {{ hire.role_title }}{% endfor %}{% else %}No{% endif %}</dd></div>
+      <div><dt>First added</dt><dd>{{ candidate.created|stamp }}{% if candidate.created_by %} by {{ candidate.created_by }}{% endif %}</dd></div>
+    </dl>
+  </section>
+
+  {% if 'candidates.edit' in can %}
+  <section class="section" id="details">
+    <h2>Details</h2>
+    <form class="stack" method="post" action="/candidates/{{ candidate.id }}" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      {{ field('name', 'Name', candidate.name, 'Eva Svobodova', 120) }}
+      <div class="grid2">
+        {{ field('headline', 'Role or headline', candidate.headline, 'Data engineer', 200) }}
+        {{ field('employer', 'Employer', candidate.employer, 'Acme', 200) }}
+      </div>
+      <div class="grid2">
+        {{ field('location', 'Location', candidate.location, 'Brno', 200) }}
+        <div class="field"><span class="field__label">Status</span>{{ select('status', statuses, candidate.status) }}</div>
+      </div>
+      {{ field('skills', 'Skills, separated by commas', candidate.skills|join(', '), 'python, sql', 600) }}
+      {{ field('tags', 'Tags, separated by commas', candidate.tags|join(', '), 'referral', 200) }}
+      <label class="field">
+        <span class="field__label">Notes</span>
+        <textarea class="input input--area" name="notes" rows="4" maxlength="4000">{{ candidate.notes }}</textarea>
+      </label>
+      <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Save</button></div>
+    </form>
+  </section>
+  {% else %}
+  <section class="section">
+    <h2>Details</h2>
+    <dl class="facts">
+      <div><dt>Role</dt><dd>{{ candidate.headline or '-' }}</dd></div>
+      <div><dt>Employer</dt><dd>{{ candidate.employer or '-' }}</dd></div>
+      <div><dt>Location</dt><dd>{{ candidate.location or '-' }}</dd></div>
+      <div><dt>Skills</dt><dd>{{ candidate.skills|join(', ') or '-' }}</dd></div>
+      <div><dt>Tags</dt><dd>{{ candidate.tags|join(', ') or '-' }}</dd></div>
+    </dl>
+    {% if candidate.notes %}<p>{{ candidate.notes }}</p>{% endif %}
+  </section>
+  {% endif %}
+
+  <section class="section" id="links">
+    <h2>Public profiles</h2>
+    <ul class="memory">
+      {% for link in links %}
+      <li>
+        <span><a class="textlink" href="{{ link.url }}" target="_blank" rel="noopener noreferrer nofollow" referrerpolicy="no-referrer">{{ link.label or link.url }}</a></span>
+        {% if 'candidates.edit' in can %}
+        <form method="post" action="/candidates/{{ candidate.id }}/links/remove">{{ csrf(csrf_token) }}<input type="hidden" name="key" value="{{ link.url }}"><button class="ibtn" type="submit" aria-label="Remove this link">{{ icon('close') }}</button></form>
+        {% endif %}
+      </li>
+      {% else %}
+      <li class="muted">No profile links yet.</li>
+      {% endfor %}
+    </ul>
+    {% if 'candidates.edit' in can %}
+    <form class="signin__row" method="post" action="/candidates/{{ candidate.id }}/links" novalidate>
+      {{ csrf(csrf_token) }}
+      <input class="input" type="text" name="url" maxlength="600" placeholder="https://www.linkedin.com/in/..." aria-label="Profile link">
+      <button class="btn btn--small" type="submit">Add</button>
+    </form>
+    {% endif %}
+  </section>
+
+  {% if 'contacts.view' in can %}
+  <section class="section" id="contacts">
+    <h2>Contact details</h2>
+    <p class="hint">Only details the person gave you or published for professional contact. They are saved when you record a hire.</p>
+    <ul class="memory">
+      {% for contact in contacts %}
+      <li>
+        <span><strong>{{ contact.kind|capitalize }}</strong> {{ contact.value }} <small>{{ contact.source }}, {{ contact.created|stamp }}</small></span>
+        {% if 'contacts.edit' in can %}
+        <form method="post" action="/candidates/{{ candidate.id }}/contacts/{{ contact.id }}/remove">{{ csrf(csrf_token) }}<button class="ibtn" type="submit" aria-label="Remove this contact detail">{{ icon('close') }}</button></form>
+        {% endif %}
+      </li>
+      {% else %}
+      <li class="muted">None saved.</li>
+      {% endfor %}
+    </ul>
+    {% if 'contacts.edit' in can %}
+    <form class="stack" method="post" action="/candidates/{{ candidate.id }}/contacts" autocomplete="off" novalidate>
+      {{ csrf(csrf_token) }}
+      <div class="grid2">
+        <div class="field"><span class="field__label">Kind</span>{{ select('kind', kinds, 'email') }}</div>
+        {{ field('value', 'Value', '', 'eva@example.com', 400) }}
+      </div>
+      <div><button class="btn btn--small" type="submit">{{ icon('plus') }}Add</button></div>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="section" id="hires">
+    <h2>Hiring history with you</h2>
+    {% for hire in hires %}
+    <article class="hire">
+      <header><strong>{{ hire.role_title }}</strong> <span class="kind">{{ hire.outcome }}</span>{% if hire.rating %} <span class="num">{{ hire.rating }} / {{ grade_range[1] }}</span>{% endif %}</header>
+      <p class="muted">{{ hire.department or 'No department' }}{% if hire.started %}, from {{ hire.started }}{% endif %}{% if hire.ended %}, until {{ hire.ended }}{% endif %}</p>
+      {% if hire.review %}<p>{{ hire.review }}</p>{% endif %}
+      {% if 'hires.manage' in can %}
+      <details class="more">
+        <summary><span>Update this hire</span>{{ icon('chevron') }}</summary>
+        <form class="stack" method="post" action="/candidates/{{ candidate.id }}/hires/{{ hire.id }}" autocomplete="off" novalidate>
+          {{ csrf(csrf_token) }}
+          <div class="grid2">
+            {{ field('role_title', 'Role', hire.role_title, 'Data engineer', 200) }}
+            {{ field('department', 'Department', hire.department, 'Platform', 200) }}
+          </div>
+          <div class="grid2">
+            {{ field('started', 'Started', hire.started, '2026-03-01', 10) }}
+            {{ field('ended', 'Ended', hire.ended, '2026-09-30', 10) }}
+          </div>
+          <div class="grid2">
+            <div class="field"><span class="field__label">Outcome</span>{{ select('outcome', outcomes, hire.outcome) }}</div>
+            <div class="field"><span class="field__label">How did it go</span>{{ select('rating', grades, hire.rating|string if hire.rating else '') }}</div>
+          </div>
+          <label class="field">
+            <span class="field__label">Review</span>
+            <textarea class="input input--area" name="review" rows="3" maxlength="4000">{{ hire.review }}</textarea>
+          </label>
+          <div class="toolbar">
+            <button class="btn btn--primary btn--small" type="submit">{{ icon('check') }}Save</button>
+          </div>
+        </form>
+        <form method="post" action="/candidates/{{ candidate.id }}/hires/{{ hire.id }}/delete">{{ csrf(csrf_token) }}<button class="btn btn--small" type="submit">Remove this hire</button></form>
+      </details>
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="muted">Not hired yet.</p>
+    {% endfor %}
+    {% if 'hires.manage' in can %}
+    <details class="more">
+      <summary><span>Record a hire</span>{{ icon('chevron') }}</summary>
+      <form class="stack" method="post" action="/candidates/{{ candidate.id }}/hires" autocomplete="off" novalidate>
+        {{ csrf(csrf_token) }}
+        <p class="hint">Their public profile links are already kept. Add the email address and phone number they gave you and they are saved as contact details.</p>
+        <div class="grid2">
+          {{ field('role_title', 'Role', '', 'Data engineer', 200) }}
+          {{ field('department', 'Department', '', 'Platform', 200) }}
+        </div>
+        <div class="grid3">
+          {{ field('started', 'Start date', '', '2026-03-01', 10) }}
+          {{ field('email', 'Email', '', 'eva@example.com', 254) }}
+          {{ field('phone', 'Phone', '', '+420 601 234 567', 40) }}
+        </div>
+        <div><button class="btn btn--primary" type="submit">{{ icon('check') }}Record the hire</button></div>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+
+  <section class="section" id="timeline">
+    <h2>Timeline</h2>
+    {% if 'candidates.edit' in can %}
+    <form class="signin__row" method="post" action="/candidates/{{ candidate.id }}/note" novalidate>
+      {{ csrf(csrf_token) }}
+      <input class="input" type="text" name="summary" maxlength="200" placeholder="Add a note to the timeline" aria-label="Note">
+      <button class="btn btn--small" type="submit">Add</button>
+    </form>
+    {% endif %}
+    <ul class="timeline">
+      {% for event in events %}
+      <li>
+        <span class="muted num">{{ event.ts|stamp }}</span>
+        <span>{{ event.summary }}{% if event.job_id and 'reports.view' in can %} <a class="textlink" href="/jobs/{{ event.job_id }}">Open the report</a>{% endif %}{% if event.actor %} <small class="muted">{{ event.actor }}</small>{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

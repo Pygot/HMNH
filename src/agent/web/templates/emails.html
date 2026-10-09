@@ -1,0 +1,113 @@
+{# src/agent/web/templates/emails.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, icon, select, errors_box %}
+{% block title %}Email drafts | HMNH{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Email drafts</h1>
+    <p class="meta">Templates for one person, a group or your team. {% if policy.email_sending_enabled and mail_ready and 'emails.send' in can %}Nothing is sent unless you confirm each message.{% else %}Text only: nothing is sent from here.{% endif %}</p>
+  </div>
+  {% if 'emails.log' in can %}<div class="pagehead__tools"><a class="textlink" href="/emails/log">Sent mail</a></div>{% endif %}
+</header>
+{% if saved %}<div class="note note--ok" role="status">{{ icon('check') }}<div>The template was saved.</div></div>{% endif %}
+{% if mailed %}<div class="note note--ok" role="status">{{ icon('check') }}<div>The message was sent.</div></div>{% endif %}
+{{ errors_box(errors) }}
+
+<div class="trio">
+  <section class="pane" id="templates" aria-label="Templates">
+    <header class="pane__head">
+      <h2>Templates</h2>
+      {% if editing %}<a class="textlink" href="/emails{% if selected_job %}?job={{ selected_job }}{% endif %}">{{ icon('plus') }}New</a>{% endif %}
+    </header>
+    <nav class="seg" aria-label="Category">
+      <a class="seg__link{% if not category %} is-on{% endif %}" href="/emails">All</a>
+      {% for item in categories %}
+      <a class="seg__link{% if category == item.value %} is-on{% endif %}" href="/emails?category={{ item.value }}">{{ {'single': 'One', 'batch': 'Group', 'team': 'Team'}[item.value] }}</a>
+      {% endfor %}
+    </nav>
+    <ul class="rows pane__body">
+      {% for item in templates %}
+      <li class="tpl">
+        <a class="tpl__main" href="/emails?edit={{ item.id }}{% if selected_job %}&amp;job={{ selected_job }}{% endif %}">
+          <strong>{{ item.name }}</strong>
+          <small>{{ examples[item.id] }}</small>
+          <small>{{ item.category.value }}, {{ item.purpose.value }}{% if item.builtin %}, built in{% endif %}</small>
+        </a>
+        {% if not item.builtin %}
+        <form method="post" action="/emails/templates/{{ item.id }}/delete">
+          {{ csrf(csrf_token) }}
+          <button class="ibtn" type="submit" aria-label="Delete template {{ item.name }}">{{ icon('trash') }}</button>
+        </form>
+        {% endif %}
+      </li>
+      {% else %}
+      <li class="empty">No template in this category yet.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <form id="editor" class="pane" method="post" action="/emails/templates" data-email-form data-preview="/emails/preview" novalidate>
+    {{ csrf(csrf_token) }}
+    <input type="hidden" name="template_id" value="{{ values.template_id }}">
+    <header class="pane__head">
+      <h2>{{ 'Edit template' if editing else 'New template' }}</h2>
+      <div class="seg" role="radiogroup" aria-label="Category">
+        {% for item in categories %}
+        <label class="seg__item"><input type="radio" name="category" value="{{ item.value }}"{% if values.category == item.value %} checked{% endif %}><span>{{ {'single': 'One person', 'batch': 'Group', 'team': 'Team'}[item.value] }}</span></label>
+        {% endfor %}
+      </div>
+    </header>
+    <div class="pane__body stack">
+      <label class="field">
+        <span class="field__label">Name</span>
+        <input class="input" type="text" name="name" maxlength="120" value="{{ values.name }}" placeholder="Reach out to Python engineers" autocomplete="off">
+      </label>
+      <div class="grid2">
+        <label class="field">
+          <span class="field__label">Purpose</span>
+          {{ select('purpose', purpose_options, values.purpose) }}
+        </label>
+        <label class="field">
+          <span class="field__label">Fill it in with</span>
+          {{ select('job', job_options, selected_job) }}
+        </label>
+      </div>
+      <label class="field">
+        <span class="field__label">Subject</span>
+        <input class="input" type="text" name="subject" maxlength="250" value="{{ values.subject }}" placeholder="{% raw %}{{ role.title }} at {{ sender.company }}{% endraw %}" autocomplete="off" data-trigger>
+      </label>
+      <label class="field">
+        <span class="field__label">Text</span>
+        <textarea class="input input--area" name="body" rows="9" maxlength="8050" data-trigger placeholder="{% raw %}Hi {{ candidate.first_name }}, ...{% endraw %}">{{ values.body }}</textarea>
+      </label>
+      <div class="chips" data-placeholders>
+        {% for name, fields in placeholders.items() %}
+        <div class="chips__set" data-set="{{ name }}"{% if name != values.category %} hidden{% endif %}>
+          {% for field_name in fields %}<button type="button" class="chip" data-insert="{{ field_name }}">{{ field_name }}</button>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <label class="field">
+        <span class="field__label">Names, one per line, up to {{ max_batch }}</span>
+        <textarea class="input input--area" name="names" rows="3" maxlength="4000" data-trigger placeholder="Jan Novak&#10;Eva Svobodova"></textarea>
+      </label>
+      <p class="hint">Fields in double curly braces are filled in for every person. Conditions and loops work too. Without names, the person from the selected search is used. Candidate-facing templates cannot read ratings or other internal assessments.</p>
+    </div>
+    <footer class="pane__foot">
+      <span class="muted">{{ 'Built-in templates are read only; saving creates your own copy.' if values.name.endswith('(copy)') else 'Templates are saved as small files on this machine.' }}</span>
+      <button class="btn btn--primary" type="submit">{{ icon('check') }}Save template</button>
+    </footer>
+  </form>
+
+  <section class="pane" id="drafts" aria-label="Drafts">
+    <header class="pane__head">
+      <h2>Drafts</h2>
+      <button type="button" class="textlink" data-copy-all>{{ icon('copy') }}Copy all</button>
+    </header>
+    <div class="note note--error" role="alert" data-preview-error hidden>{{ icon('warn') }}<div data-preview-message></div></div>
+    <div class="drafts pane__body" data-drafts aria-live="polite"><p class="empty">Write or choose a template and the drafts appear here as you type.</p></div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('emails.js') }}" nonce="{{ nonce }}" defer></script>{% endblock %}

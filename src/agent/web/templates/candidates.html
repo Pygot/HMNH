@@ -1,0 +1,52 @@
+{# src/agent/web/templates/candidates.html #}
+{% extends "base.html" %}
+{% from "_macros.html" import icon, errors_box, select, tag %}
+{% block title %}Candidates | HMNH{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset('pages.css') }}">{% endblock %}
+{% block content %}
+<header class="pagehead">
+  <div>
+    <h1>Candidates</h1>
+    <p class="meta">{{ found.total|plural('person') if found.total != 1 else '1 person' }}{% if filters.q or filters.status or filters.hired or filters.min %} match{{ 'es' if found.total == 1 }} your filters{% endif %}. People you research are added here with their rating, so you see what you already know.</p>
+  </div>
+  {% if 'candidates.edit' in can %}<div class="pagehead__tools"><a class="btn btn--small btn--primary" href="/candidates/new">{{ icon('plus') }}Add a candidate</a></div>{% endif %}
+</header>
+{{ errors_box(errors) }}
+<div class="wide">
+  <form class="toolbar" method="get" action="/candidates" novalidate>
+    <label class="find find--wide">{{ icon('search') }}<input type="text" name="q" value="{{ filters.q }}" placeholder="Search by name, employer or tag" autocomplete="off" aria-label="Search candidates"></label>
+    <div class="field">{{ select('status', statuses, filters.status) }}</div>
+    <div class="field">{{ select('hired', hired_options, filters.hired) }}</div>
+    <div class="field">{{ select('sort', sorts, filters.sort) }}</div>
+    <label class="field field--short"><span class="sr">Lowest rating</span><input class="input" type="text" name="min" inputmode="decimal" maxlength="4" value="{{ filters.min }}" placeholder="Min rating"></label>
+    <button class="btn btn--small" type="submit">Filter</button>
+  </form>
+
+  <div class="tablewrap">
+    <table class="table">
+      <thead><tr><th scope="col">Name</th><th scope="col">Status</th><th scope="col">Rating</th><th scope="col">Researched</th><th scope="col">Hired</th><th scope="col">Last activity</th></tr></thead>
+      <tbody>
+        {% for item in found.items %}
+        <tr>
+          <td><a class="textlink" href="/candidates/{{ item.id }}">{{ item.name }}</a><br><small class="muted">{{ item.headline }}{% if item.headline and item.employer %}, {% endif %}{{ item.employer }}{% if item.location %}{% if item.headline or item.employer %}, {% endif %}{{ item.location }}{% endif %}</small></td>
+          <td><span class="kind">{{ item.status }}</span></td>
+          <td class="num">{% if item.rating is not none %}{{ '%.1f'|format(item.rating) }} / 5{% else %}none{% endif %}</td>
+          <td class="num">{{ item.researched }}</td>
+          <td>{% if item.hire_count %}{{ item.hire_count|plural('time') }}{% else %}never{% endif %}</td>
+          <td>{{ item.updated|stamp }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted">No candidates yet. Research someone in the chat and they appear here, or add one by hand.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Pages">
+    {% if page_number > 1 %}<a class="btn btn--small" href="/candidates?q={{ filters.q|urlencode }}&amp;status={{ filters.status }}&amp;hired={{ filters.hired }}&amp;sort={{ filters.sort }}&amp;min={{ filters.min|urlencode }}&amp;page={{ page_number - 1 }}">Newer</a>{% endif %}
+    <span class="muted">Page {{ page_number }} of {{ pages }}</span>
+    {% if page_number < pages %}<a class="btn btn--small" href="/candidates?q={{ filters.q|urlencode }}&amp;status={{ filters.status }}&amp;hired={{ filters.hired }}&amp;sort={{ filters.sort }}&amp;min={{ filters.min|urlencode }}&amp;page={{ page_number + 1 }}">Older{{ icon('arrow') }}</a>{% endif %}
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

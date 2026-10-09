@@ -1,0 +1,12 @@
+{# src/agent/web/templates/_admin.html #}
+{% macro admin_nav(section, can) %}
+<nav class="subtabs" aria-label="Administration">
+  {% if 'users.view' in can %}<a class="tab" href="/admin/users"{% if section == 'users' %} aria-current="page"{% endif %}>Accounts</a>{% endif %}
+  {% if 'roles.manage' in can %}<a class="tab" href="/admin/roles"{% if section == 'roles' %} aria-current="page"{% endif %}>Roles</a>{% endif %}
+  {% if 'audit.view' in can %}<a class="tab" href="/admin/audit"{% if section == 'audit' %} aria-current="page"{% endif %}>Audit log</a>{% endif %}
+  {% if 'config.manage' in can %}<a class="tab" href="/admin/connections"{% if section == 'connections' %} aria-current="page"{% endif %}>Connections</a>{% endif %}
+  {% if 'data.export' in can %}<a class="tab" href="/admin/data"{% if section == 'export' %} aria-current="page"{% endif %}>Export</a>{% endif %}
+  {% if 'data.import' in can %}<a class="tab" href="/admin/import"{% if section == 'import' %} aria-current="page"{% endif %}>Import</a>{% endif %}
+  {% if 'config.manage' in can %}<a class="tab" href="/admin/security"{% if section == 'security' %} aria-current="page"{% endif %}>Security</a>{% endif %}
+</nav>
+{% endmacro %}
